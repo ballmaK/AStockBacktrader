@@ -1,10 +1,10 @@
+import base
 import pandas as pd
-from db import common
 
 def getOneDayTradeData(date):
     sql = "select * from stock_zh_a_daily where date='%s' order by date desc" % date
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -17,7 +17,7 @@ def isTradeDate(date):
 def getTradeDates(start_date, end_date):
     sql = "select distinct date from stock_zh_a_daily where code='sh600000' order by date desc"
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -26,16 +26,16 @@ def getTradeDates(start_date, end_date):
 def getMaxTradeDateNDaysBefore(n):
     sql = "select distinct date from stock_zh_a_daily where code='sh600000' order by date desc"
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
     return df['date'].to_list()[n]
 
-def getMaxTradeDate():
+def get_lastest_trade_date():
     sql = "select distinct date from stock_zh_a_daily where code='sh600000' order by date desc"
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -44,7 +44,7 @@ def getMaxTradeDate():
 def select_all_code():
     sql = 'select distinct code from stock_zh_a_daily'
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -56,7 +56,7 @@ def select_data_by_code(code, limit):
     else:
         sql = 'select * from stock_zh_a_daily where code="%s" order by date desc' % (code)
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -69,7 +69,7 @@ def select_data(code, date, limit):
         sql = "select * from stock_zh_a_daily where code='%s' and TIMESTAMP(date) <= TIMESTAMP('%s') order by date desc" % (code, date)
     # print(sql)
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -79,7 +79,7 @@ def select_data_between_date(code, start_date, end_date):
     sql = "select * from stock_zh_a_daily where code='%s'and TIMESTAMP(date) >= TIMESTAMP('%s') and TIMESTAMP(date) <= TIMESTAMP('%s')" % (code, start_date, end_date)
     # print(sql)
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -88,7 +88,7 @@ def select_data_between_date(code, start_date, end_date):
 def select_data_by_date(date):
     sql = 'select * from stock_zh_a_daily where date="%s" order by date' % date
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -97,7 +97,7 @@ def select_data_by_date(date):
 def select_stock_data_by_date(code, date):
     sql = 'select * from stock_zh_a_daily where date="%s" and code="%s" order by date' % (date, code)
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
@@ -106,7 +106,7 @@ def select_stock_data_by_date(code, date):
 def select_trade_by_id(trade_id):
     sql = 'select * from stock_trade_log where trade_id="%s"' % trade_id
     try:
-        df = pd.read_sql(sql=sql, con=common.engine())
+        df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
         return ''
