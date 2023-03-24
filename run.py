@@ -79,15 +79,25 @@ def run(pargs=''):
 
     stdstats = not args.nostdstats
     
-    data_kwargs_str = args.data
-    data_kwargs = eval('dict(' + data_kwargs_str + ')')
-    db_action = 'update'
-    if 'reupdate' in data_kwargs and data_kwargs['reupdate']:
-        # do reupdate
-        action = 'reupdate'
+    # 股票数据操作
+    # 基本数据
+    info_kwargs_str = args.info
+    info_kwargs = eval('dict(' + info_kwargs_str + ')')
+    if 'base' in info_kwargs and info_kwargs['base']:
+        init_stock_info()
+    # 每日数据
+    data_kwargs_str = args.daily
+    if data_kwargs_str:
+        data_kwargs = eval('dict(' + data_kwargs_str + ')')
+        db_action = 'update'
+        if 'reupdate' in data_kwargs and data_kwargs['reupdate']:
+            # do reupdate
+            action = 'reupdate'
+            
+        if db_action == 'update':
+            update_stock_daily(**data_kwargs)
         
-    if db_action == 'update':
-        update_stock_daily(**data_kwargs)
+    
     return
 
     cer_kwargs_str = args.cerebro
@@ -430,10 +440,10 @@ def parse_args(pargs=''):
         formatter_class=argparse.RawTextHelpFormatter,
     )
 
-    group = parser.add_argument_group(title='Data options')
+    group = parser.add_argument_group(title='Stock data options')
     # Data options
     group.add_argument(
-        '--data', '-d', 
+        '--daily', '-d', 
         metavar='kwargs',
         required=False, const='', default='', nargs='?',               
         help='The argument can be specified with the following form:\n'
@@ -445,12 +455,27 @@ def parse_args(pargs=''):
               'The passed kwargs will be passed directly to the cerebro\n'
               'instance created for the execution\n'
               '\n'
-              'The available kwargs to cerebro are:\n'
+              'The available kwargs to data are:\n'
               '  - update (default: True)\n'
-              '  - reupdate (default: False)\n'
               '  - fromdate (default: None [yyyyMMdd])\n'
               '  - todate (default: None [yyyyMMdd])\n'
               '  - stock (default: None)\n')
+    
+    group.add_argument(
+        '--info', '-i', 
+        metavar='kwargs',
+        required=False, const='', default='', nargs='?',               
+        help='The argument can be specified with the following form:\n'
+              '\n'
+              '  - kwargs\n'
+              '\n'
+              '    Example: "preload=True" which set its to True\n'
+              '\n'
+              'The passed kwargs will be passed directly to the cerebro\n'
+              'instance created for the execution\n'
+              '\n'
+              'The available kwargs to data are:\n'
+              '  - base (default: True)\n')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(

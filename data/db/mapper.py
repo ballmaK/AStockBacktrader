@@ -43,7 +43,7 @@ def get_lastest_trade_date():
     return df['date'].to_list()[0]
 
 def select_all_code():
-    sql = 'select distinct code from stock_zh_a_daily'
+    sql = 'select distinct code from stock_base'
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:

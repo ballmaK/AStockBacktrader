@@ -14,7 +14,7 @@ from . import base
 from . import mapper
 from . import constants
 
-def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='qfq'):
+def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
     if not stock:
         stocks = select_all_stocks()
     else:
@@ -64,6 +64,19 @@ def select_random_stock_data(fromdate, todate, stock_num=10):
 
 def get_lastest_trade_date():
     return mapper.get_lastest_trade_date()
+
+def init_stock_info():
+    print('** 更新股票基础数据 **')
+    df = ak.stock_zh_a_spot()
+    df['code'] = df['代码']
+    df['symbol'] = df['代码'].map(lambda x: x[2:])
+    df['name'] = df['名称']
+    stock_df = df[['code', 'symbol', 'name']]
+    stock_df.set_index('code', inplace=True)
+    print(stock_df)
+    if not stock_df.empty:
+        base.insert_db(stock_df, constants.STOCK_BASE_TABLE_NAME, True, "`code`")
+        
 
 def __init_stock_daily(stock, start_date, end_date, adjust):
     try:
