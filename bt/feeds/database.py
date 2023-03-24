@@ -3,8 +3,8 @@ from backtrader.feed import DataBase
 
 from utils.timeutils import *
 
-class LocalDataBase(DataBase):
-        
+class DBDataBase(pandafeed.PandasData):
+    
     params = (
         ('dataname', 'localdbdata'),
         ('name', None),
