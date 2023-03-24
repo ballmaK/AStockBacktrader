@@ -32,6 +32,7 @@ import sys
 import backtrader as bt
 
 from data.db import *
+from bt.feeds import *
 
 DATAFORMATS = dict(
     btcsv=bt.feeds.BacktraderCSVData,
@@ -42,6 +43,7 @@ DATAFORMATS = dict(
     yahoocsv=bt.feeds.YahooFinanceCSVData,
     yahoocsv_unreversed=bt.feeds.YahooFinanceCSVData,
     yahoo=bt.feeds.YahooFinanceData,
+    localdb=LocalDataBase
 )
 
 try:
@@ -235,6 +237,9 @@ def getdatas(args):
 
     # Prepare some args
     dfkwargs = dict()
+    if args.stock:
+        dfkwargs['stock'] = args.stock
+    
     if args.format == 'yahoo_unreversed':
         dfkwargs['reverse'] = True
 
@@ -445,11 +450,15 @@ def parse_args(pargs=''):
         description='Backtrader Run Script plus+',
         formatter_class=argparse.RawTextHelpFormatter,
     )
+    group = parser.add_argument_group(title='Data options')
+    # Data options
+    group.add_argument('--data', '-d', action='append', required=True,
+                       help='Data files to be added to the system')
 
     group = parser.add_argument_group(title='Stock data options')
-    # Data options
+    # Stock Data options
     group.add_argument(
-        '--daily', '-d', 
+        '--daily', '-daly', 
         metavar='kwargs',
         required=False, const='', default='', nargs='?',               
         help='The argument can be specified with the following form:\n'
@@ -532,6 +541,10 @@ def parse_args(pargs=''):
                        help='Disable the standard statistics observers')
 
     datakeys = list(DATAFORMATS)
+    group.add_argument('--stock', '--st', required=False,
+                       default='sh600000', 
+                       help='Stock name')
+    
     group.add_argument('--format', '--csvformat', '-c', required=False,
                        default='btcsv', choices=datakeys,
                        help='CSV Format')
