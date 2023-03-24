@@ -85,7 +85,8 @@ def run(pargs=''):
     info_kwargs = eval('dict(' + info_kwargs_str + ')')
     if 'base' in info_kwargs and info_kwargs['base']:
         init_stock_info()
-    # 每日数据
+        return
+    # 更新每日数据
     data_kwargs_str = args.daily
     if data_kwargs_str:
         data_kwargs = eval('dict(' + data_kwargs_str + ')')
@@ -96,9 +97,14 @@ def run(pargs=''):
             
         if db_action == 'update':
             update_stock_daily(**data_kwargs)
+            return
         
-    
-    return
+    # 查询日线数据
+    query_kwargs_str = args.query
+    if query_kwargs_str:
+        query_kwargs = eval('dict(' + query_kwargs_str + ')')
+        print(select_stock_daily(**query_kwargs))
+        return
 
     cer_kwargs_str = args.cerebro
     cer_kwargs = eval('dict(' + cer_kwargs_str + ')')
@@ -476,6 +482,24 @@ def parse_args(pargs=''):
               '\n'
               'The available kwargs to data are:\n'
               '  - base (default: True)\n')
+    
+    group.add_argument(
+        '--query', '-qry', 
+        metavar='kwargs',
+        required=False, const='', default='', nargs='?',               
+        help='The argument can be specified with the following form:\n'
+              '\n'
+              '  - kwargs\n'
+              '\n'
+              '    Example: "preload=True" which set its to True\n'
+              '\n'
+              'The passed kwargs will be passed directly to the cerebro\n'
+              'instance created for the execution\n'
+              '\n'
+              'The available kwargs to data are:\n'
+              '  - stock (default: None)\n'
+              '  - fromdate (default: None [yyyyMMdd])\n'
+              '  - todate (default: None [yyyyMMdd])\n')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(

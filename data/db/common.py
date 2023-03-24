@@ -56,8 +56,11 @@ def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
 def select_all_stocks():
     return mapper.select_all_code()
 
-def select_data(stock, fromdate, todate):
-    pass
+def select_stock_daily(stock, fromdate, todate):
+    code = stock
+    start_date = datetime.strptime(str(fromdate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    end_date = datetime.strptime(str(todate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
 def select_random_stock_data(fromdate, todate, stock_num=10):
     pass
