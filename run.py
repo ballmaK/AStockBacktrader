@@ -30,7 +30,8 @@ import string
 import sys
 
 import backtrader as bt
-import data.db as db
+
+from data.db import *
 
 DATAFORMATS = dict(
     btcsv=bt.feeds.BacktraderCSVData,
@@ -81,11 +82,12 @@ def run(pargs=''):
     data_kwargs_str = args.data
     data_kwargs = eval('dict(' + data_kwargs_str + ')')
     db_action = 'update'
-    if 'reupdate' in data_kwargs and data_kwargs.reupdate:
+    if 'reupdate' in data_kwargs and data_kwargs['reupdate']:
         # do reupdate
         action = 'reupdate'
-    if 'fromdate' in data_kwargs and 'todate' in data_kwargs:
-        db.update_stock_daily(fromdate=data_kwargs.fromdate, todate=data_kwargs.todate)
+        
+    if db_action == 'update':
+        update_stock_daily(**data_kwargs)
     return
 
     cer_kwargs_str = args.cerebro

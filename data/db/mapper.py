@@ -1,5 +1,6 @@
-import base
 import pandas as pd
+
+from . import base
 
 def getOneDayTradeData(date):
     sql = "select * from stock_zh_a_daily where date='%s' order by date desc" % date

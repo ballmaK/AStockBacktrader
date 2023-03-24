@@ -10,8 +10,7 @@ DATE_FORMAT_TO_SECOND = '%H:%M:%S'
 DATE_FORMAT_FULL = ' '.join([DATE_FORMAT_TO_DAY, DATE_FORMAT_TO_SECOND])
 
 def reformat_date(date):
-    return date.strftime("%Y-%m-%d")
-
+    return date.to_pydatetime()
 def get_next_day(date):
     if not date:
         date = datetime.datetime.now();

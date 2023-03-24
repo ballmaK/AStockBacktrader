@@ -72,7 +72,8 @@ def insert_other_db(to_db, data, table_name, write_index, primary_keys):
         # 插入到第一个位置：
         col_name_list.insert(0, data.index.name)
     # print(col_name_list)
-    data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='append',
+    if not data.empty:
+        data.to_sql(name=table_name, con=engine_mysql, schema=to_db, if_exists='replace',
                 dtype={col_name: NVARCHAR(length=255) for col_name in col_name_list}, index=write_index)
 
     # print(insp.get_pk_constraint(table_name))

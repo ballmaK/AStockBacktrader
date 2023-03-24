@@ -3,5 +3,4 @@ from __future__ import (absolute_import, division, print_function,
 
 from .common import *
 from .constants import *
-
-from . import mapper as mapper
+from .mapper import *
