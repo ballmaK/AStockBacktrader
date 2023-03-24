@@ -43,7 +43,7 @@ DATAFORMATS = dict(
     yahoocsv=bt.feeds.YahooFinanceCSVData,
     yahoocsv_unreversed=bt.feeds.YahooFinanceCSVData,
     yahoo=bt.feeds.YahooFinanceData,
-    localdb=LocalDataBase
+    localdb=DBDataBase
 )
 
 try:
@@ -83,29 +83,20 @@ def run(pargs=''):
     
     # 股票数据操作
     # 基本数据
-    info_kwargs_str = args.info
-    info_kwargs = eval('dict(' + info_kwargs_str + ')')
-    if 'base' in info_kwargs and info_kwargs['base']:
+    if args.init_base:
         init_stock_info()
         return
     # 更新每日数据
-    data_kwargs_str = args.daily
-    if data_kwargs_str:
-        data_kwargs = eval('dict(' + data_kwargs_str + ')')
-        db_action = 'update'
-        if 'reupdate' in data_kwargs and data_kwargs['reupdate']:
-            # do reupdate
-            action = 'reupdate'
-            
-        if db_action == 'update':
-            update_stock_daily(**data_kwargs)
-            return
+    if args.update_daily:
+        update_stock_daily(stock=args.stock, fromdate=args.fromdate, todate=args.todate)
+        return
         
     # 查询日线数据
-    query_kwargs_str = args.query
-    if query_kwargs_str:
-        query_kwargs = eval('dict(' + query_kwargs_str + ')')
-        print(select_stock_daily(**query_kwargs))
+    if args.query:
+        if not args.fromdate or not args.todate:
+            print(f'** 开始/结束日期未给定')
+            return
+        print(select_stock_daily(stock=args.stock, fromdate=args.fromdate, todate=args.todate))
         return
 
     cer_kwargs_str = args.cerebro
@@ -160,6 +151,10 @@ def run(pargs=''):
     ans = getobjects(args.analyzers, bt.Analyzer, bt.analyzers)
     for an, kwargs in ans:
         cerebro.addanalyzer(an, **kwargs)
+        
+    siz = getobjects(args.sizers, bt.Sizer, bt.sizers)
+    for si, kwargs in siz:
+        cerebro.addsizer(si, **kwargs)
 
     setbroker(args, cerebro)
 
@@ -237,6 +232,7 @@ def getdatas(args):
 
     # Prepare some args
     dfkwargs = dict()
+       
     if args.stock:
         dfkwargs['stock'] = args.stock
     
@@ -249,7 +245,7 @@ def getdatas(args):
         if len(dtsplit) > 1:
             fmtstr += 'T%H:%M:%S'
 
-        fromdate = datetime.datetime.strptime(args.fromdate, fmtstr)
+        fromdate = datetime.datetime.strptime(args.fromdate, DATE_FORMAT_TO_DAY_WITHOUT_DASH)
         dfkwargs['fromdate'] = fromdate
 
     fmtstr = '%Y-%m-%d'
@@ -257,7 +253,7 @@ def getdatas(args):
         dtsplit = args.todate.split('T')
         if len(dtsplit) > 1:
             fmtstr += 'T%H:%M:%S'
-        todate = datetime.datetime.strptime(args.todate, fmtstr)
+        todate = datetime.datetime.strptime(args.todate, DATE_FORMAT_TO_DAY_WITHOUT_DASH)
         dfkwargs['todate'] = todate
 
     if args.timeframe is not None:
@@ -452,63 +448,25 @@ def parse_args(pargs=''):
     )
     group = parser.add_argument_group(title='Data options')
     # Data options
-    group.add_argument('--data', '-d', action='append', required=True,
+    group.add_argument('--data', '-d', action='append', required=False,
                        help='Data files to be added to the system')
 
     group = parser.add_argument_group(title='Stock data options')
     # Stock Data options
     group.add_argument(
-        '--daily', '-daly', 
-        metavar='kwargs',
-        required=False, const='', default='', nargs='?',               
-        help='The argument can be specified with the following form:\n'
-              '\n'
-              '  - kwargs\n'
-              '\n'
-              '    Example: "preload=True" which set its to True\n'
-              '\n'
-              'The passed kwargs will be passed directly to the cerebro\n'
-              'instance created for the execution\n'
-              '\n'
-              'The available kwargs to data are:\n'
-              '  - update (default: True)\n'
-              '  - fromdate (default: None [yyyyMMdd])\n'
-              '  - todate (default: None [yyyyMMdd])\n'
-              '  - stock (default: None)\n')
+        '--update-daily', '-ud',  action="store_true",
+        required=False, default=False,              
+        help='Update stock daily data')
     
     group.add_argument(
-        '--info', '-i', 
-        metavar='kwargs',
-        required=False, const='', default='', nargs='?',               
-        help='The argument can be specified with the following form:\n'
-              '\n'
-              '  - kwargs\n'
-              '\n'
-              '    Example: "preload=True" which set its to True\n'
-              '\n'
-              'The passed kwargs will be passed directly to the cerebro\n'
-              'instance created for the execution\n'
-              '\n'
-              'The available kwargs to data are:\n'
-              '  - base (default: True)\n')
+        '--init-base', '-ib', action="store_true",
+        required=False, default=False,              
+        help='Init stock base data')
     
     group.add_argument(
-        '--query', '-qry', 
-        metavar='kwargs',
-        required=False, const='', default='', nargs='?',               
-        help='The argument can be specified with the following form:\n'
-              '\n'
-              '  - kwargs\n'
-              '\n'
-              '    Example: "preload=True" which set its to True\n'
-              '\n'
-              'The passed kwargs will be passed directly to the cerebro\n'
-              'instance created for the execution\n'
-              '\n'
-              'The available kwargs to data are:\n'
-              '  - stock (default: None)\n'
-              '  - fromdate (default: None [yyyyMMdd])\n'
-              '  - todate (default: None [yyyyMMdd])\n')
+        '--query', '-qry', action="store_true",
+        required=False, default=False,              
+        help='Query stock daily data')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(
@@ -706,6 +664,33 @@ def parse_args(pargs=''):
               '\n'
               'If module is omitted then class name will be sought in\n'
               'the built-in analyzers module. Such as in:\n'
+              '\n'
+              '  - :name:kwargs or :name\n'
+              '\n'
+              'If name is omitted, then the 1st analyzer found in the\n'
+              'will be used. Such as in:\n'
+              '\n'
+              '  - module or module::kwargs')
+    )
+    
+    # Analyzers
+    group = parser.add_argument_group(title='Analyzers')
+    group.add_argument(
+        '--sizer', '-si', dest='sizers',
+        action='append', required=False,
+        metavar='module:name:kwargs',
+        help=('This option can be specified multiple times.\n'
+              '\n'
+              'The argument can be specified with the following form:\n'
+              '\n'
+              '  - module:classname:kwargs\n'
+              '\n'
+              '    Example: mymod:myclass:a=1,b=2\n'
+              '\n'
+              'kwargs is optional\n'
+              '\n'
+              'If module is omitted then class name will be sought in\n'
+              'the built-in sizers module. Such as in:\n'
               '\n'
               '  - :name:kwargs or :name\n'
               '\n'
