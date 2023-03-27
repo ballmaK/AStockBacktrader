@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt  # 由于 Backtrader 的问题，此处要求 pi
 import pandas as pd
 # import policy.indicators
 
-from data.db import common
+import bt.indicators as btind
 
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置画图时的中文显示
 plt.rcParams["axes.unicode_minus"] = False  # 设置画图时的负号显示
@@ -19,10 +19,11 @@ class LightVolume(bt.Strategy):
     """
     alias = ('Light_Volume',)
     
-    params = (("maperiod",90),
-              ('rate_buy', 0.90),
-              ('rate_sell', 0.80),
-              ('printlog', False),)  # 全局设定交易策略的参数, maperiod是 MA 均值的长度
+    params = (("period",90),
+              ('br', 0.90),
+              ('sr', 0.80),
+              ('_pvvp', btind.pvolume.PVVP),
+              ('printlog', False),)  # 全局设定交易策略的参数, period是 MA 均值的长度
 
     def __init__(self):
         """
@@ -36,26 +37,21 @@ class LightVolume(bt.Strategy):
         self.order = None
         self.buy_price = None
         self.buy_comm = None
-        # 添加移动均线指标
-        self.sma = bt.indicators.SimpleMovingAverage(
-            self.datas[0], period=5
-        )
-        self.vol_sma = bt.indicators.SimpleMovingAverage(
-            self.data_vol, period=self.params.maperiod
-        )
 
         # self.maxvol = bt.talib.MAX(self.data_vol, timeperiod=240)
-        self.minvol = bt.talib.MIN(self.data_vol, timeperiod=self.params.maperiod)
-        self.maxvol = bt.talib.MAX(self.data_vol, timeperiod=self.params.maperiod)
+        self.minvol = bt.talib.MIN(self.data_vol, timeperiod=self.params.period)
+        self.maxvol = bt.talib.MAX(self.data_vol, timeperiod=self.params.period)
         
-        self.minidx = bt.talib.MININDEX(self.data_vol, timeperiod=self.params.maperiod)
-        self.maxidx = bt.talib.MAXINDEX(self.data_vol, timeperiod=self.params.maperiod)
+        self.minidx = bt.talib.MININDEX(self.data_vol, timeperiod=self.params.period)
+        self.maxidx = bt.talib.MAXINDEX(self.data_vol, timeperiod=self.params.period)
         
         self.min_volume_pos = None
         self.max_volume_pos = None
+        
+        self._pvvp = btind.pvolume.PVVP(self.data, period=self.p.period, br=self.p.br, sr=self.p.sr)
 
-        # 添加 MinMax 指标，用于计算过去 maperiod 天内的最小/最大成交量
-        # self.volume_minmax = bt.talib.MINMAX(self.data_vol, timeperiod=self.params.maperiod)
+        # 添加 MinMax 指标，用于计算过去 period 天内的最小/最大成交量
+        # self.volume_minmax = bt.talib.MINMAX(self.data_vol, timeperiod=self.params.period)
         # self.std_vol_60 = bt.talib.STDDEV(self.data_vol, timeperiod=45,nbdev=1.0)
         # self.minvol_60 = bt.talib.MIN(self.data_vol, timeperiod=60)
         # self.minvol_90 = bt.talib.MIN(self.data_vol, timeperiod=90)
@@ -112,7 +108,9 @@ class LightVolume(bt.Strategy):
         if not self.position:  # 没有持仓
             
             # 执行买入条件判断：当日成交量接近目标成交量
-            if buy_rate >= self.params.rate_buy and self.data_close[0] <= min_price:
+            # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
+            if self._pvvp.pvvpb >= self.data_close[0] * self.p.br:
+                print(self._pvvp.pvvpb/self.data_close[0], 'br-------------', self.data_close[0])
                 self.log("BUY CREATE, %.2f, %.2f %.2f, %.2f" % (self.data_close[0], min_price, buy_rate, sell_rate))
                 # 执行买入
                 self.order = self.buy()
@@ -123,7 +121,9 @@ class LightVolume(bt.Strategy):
             # 止盈止损
             shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
             # print(dir(shouldSell))
-            if sell_rate >= self.params.rate_sell:# or shouldSell:
+            if sell_rate >= self.params.sr:# or shouldSell:
+            # if self.data_close[0] >= self._pvvp.pvvps * self.p.sr:
+                print(self.data_close[0]/self._pvvp.pvvps, 'sr-------------', self.data_close[0])
                 self.log("SELL CREATE, %.2f, %.2f %.2f" % (self.data_close[0], buy_rate, sell_rate))
                 # 执行卖出
                 self.order = self.sell()
@@ -194,6 +194,6 @@ class LightVolume(bt.Strategy):
         """
         回测结束后输出结果
         """
-        # self.log("(周期天数 %2d日)(RB %2f)(RS %2f) 期末总资金 %.2f" % (self.params.maperiod, self.params.rate_buy, self.params.rate_sell, self.broker.getvalue()), do_print=True)
+        # self.log("(周期天数 %2d日)(RB %2f)(RS %2f) 期末总资金 %.2f" % (self.params.period, self.params.rate_buy, self.params.rate_sell, self.broker.getvalue()), do_print=True)
         # print(self.broker.startingcash, self.analyzers.mysharpe.get_analysis())
         pass

@@ -29,7 +29,7 @@ python run.py -c localdb \
                 --plot \
                 --strategy :SMA_CrossOver
 
-python3 run.py -c localdb \
+python run.py -c localdb \
                 --stock sh600000 \
                 --fromdate 20200101 \
                 --todate 20210202 \
@@ -39,4 +39,5 @@ python3 run.py -c localdb \
                 -cash 20000 \
                 --commission 2.0 \
                 --sizer :PercentSizer:percents=20 \
-                --analyzer :SharpeRatio
+                --analyzer :SharpeRatio \
+                --indicator bt/indicators/pvolume.py:PVolume
