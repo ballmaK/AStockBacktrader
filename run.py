@@ -500,7 +500,6 @@ def parse_args(pargs=''):
 
     datakeys = list(DATAFORMATS)
     group.add_argument('--stock', '--st', required=False,
-                       default='sh600000', 
                        help='Stock name')
     
     group.add_argument('--format', '--csvformat', '-c', required=False,
