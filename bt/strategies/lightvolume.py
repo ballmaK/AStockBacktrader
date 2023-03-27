@@ -19,7 +19,7 @@ class LightVolume(bt.Strategy):
     """
     alias = ('Light_Volume',)
     
-    params = (("period",90),
+    params = (("period",45),
               ('br', 0.90),
               ('sr', 0.80),
               ('_pvvp', btind.pvolume.PVVP),
@@ -106,10 +106,10 @@ class LightVolume(bt.Strategy):
         # print(f"minidx{min_pos}, min vol {min_vol} {min_vol_p}/{self.minvol[0]}/{self.data_vol[0]}, price {min_price}/{self.data_close[0]}")
         # print(f"maxidx{max_pos}, max vol {max_vol} {max_vol_p}/{self.maxvol[0]}/{self.data_vol[0]}, price {max_price}/{self.data_close[0]}")
         if not self.position:  # 没有持仓
-            
+            print(self._pvvp.pvvpb[0], '---------')
             # 执行买入条件判断：当日成交量接近目标成交量
             # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
-            if self._pvvp.pvvpb >= self.data_close[0] * self.p.br:
+            if self._pvvp.pvvpb > 0:
                 print(self._pvvp.pvvpb/self.data_close[0], 'br-------------', self.data_close[0])
                 self.log("BUY CREATE, %.2f, %.2f %.2f, %.2f" % (self.data_close[0], min_price, buy_rate, sell_rate))
                 # 执行买入
@@ -121,8 +121,8 @@ class LightVolume(bt.Strategy):
             # 止盈止损
             shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
             # print(dir(shouldSell))
-            if sell_rate >= self.params.sr:# or shouldSell:
-            # if self.data_close[0] >= self._pvvp.pvvps * self.p.sr:
+            # if sell_rate >= self.params.sr:# or shouldSell:
+            if self._pvvp.pvvps[0] > 0:
                 print(self.data_close[0]/self._pvvp.pvvps, 'sr-------------', self.data_close[0])
                 self.log("SELL CREATE, %.2f, %.2f %.2f" % (self.data_close[0], buy_rate, sell_rate))
                 # 执行卖出
