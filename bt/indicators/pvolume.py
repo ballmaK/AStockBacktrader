@@ -56,7 +56,6 @@ class PVVP(Indicator):
     params = (('period', 90), ('sr', 0.9), ('br', 0.8), ('rr', 2))
     
     def __init__(self):
-        
         self.mmvp = MMVP(period=self.p.period)
         self.pv = MMV(period=self.params.period)
         self.vpr = VPR()

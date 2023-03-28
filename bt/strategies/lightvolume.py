@@ -23,6 +23,8 @@ class LightVolume(bt.Strategy):
               ('br', 0.90),
               ('sr', 0.80),
               ('rr', 2),
+              ('tp', None),
+              ('sl', None),
               ('_pvvp', btind.pvolume.PVVP),
               ('printlog', False),)  # 全局设定交易策略的参数, period是 MA 均值的长度
 
@@ -38,35 +40,38 @@ class LightVolume(bt.Strategy):
         self.order = None
         
         self._pvvp = btind.pvolume.PVVP(period=self.p.period, br=self.p.br, sr=self.p.sr, rr=self.p.rr)
-
+        
     def next(self):
         """
         主逻辑
         """
 
-        # self.log(f'收盘价, {data_close[0]}')  # 记录收盘价
-        if self.order:  # 检查是否有指令等待执行,
-            return
-        # 检查是否持
-        
-        if not self.position:  # 没有持仓
-            # 执行买入条件判断：当日成交量接近目标成交量
-            # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
-            if self._pvvp.pvvpb > 0:
-                # 执行买入
-                self.order = self.buy()
+        for i, d in enumerate(self.datas):
+            # self.log(f'收盘价, {data_close[0]}')  # 记录收盘价
+            if self.order:  # 检查是否有指令等待执行,
+                return
+            # 检查是否持
+            
+            if not self.position:  # 没有持仓
+                # 执行买入条件判断：当日成交量接近目标成交量
+                # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
+                if self._pvvp.pvvpb > 0:
+                    # 执行买入
+                    self.order = self.buy(data=d)
+                else:
+                    pass
             else:
-                pass
-        else:
-            # 执行卖出条件判断：收盘价格跌破15日均线
-            # 止盈止损
-            # shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
-            if self._pvvp.pvvps[0] > 0:
-                # 执行卖出
-                self.order = self.sell()
-            else:
-                pass
-                # self.log("HOLD,%.2f %.2f %.2f" % (self.data_close[0], buy_rate, sell_rate))
+                # 执行卖出条件判断：收盘价格跌破15日均线
+                # 止盈止损
+                # shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
+                take_profit  = (d.close[0] - self.position.price)/self.position.price*100 >= self.p.tp if self.p.tp else False
+                stop_less = (d.close[0] - self.position.price)/self.position.price*100 < -self.p.sl if self.p.sl else False
+                if self._pvvp.pvvps[0] > 0 or stop_less or take_profit:
+                    # 执行卖出
+                    self.order = self.sell(data=d)
+                else:
+                    pass
+                    # self.log("HOLD,%.2f %.2f %.2f" % (self.data_close[0], buy_rate, sell_rate))
 
     def log(self, txt, dt=None, do_print=False, do_persistence=False):
         """

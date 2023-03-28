@@ -42,4 +42,4 @@ python run.py -c localdb \
                 --analyzer :SharpeRatio \
                 --indicator bt/indicators/pvolume.py:PVolume
 
-python run.py -c localdb -cash 200000 --commission 0.015 --sizer :PercentSizer:percents=90 --fromdate 20220101 --todate 20230324 --stock sh601933 -d xxx --plot style=\'candle\' --strategy bt/strategies/lightvolume.py:Light_Volume:period=45,sr=0.85,br=0.95,rr=2.5
+python run.py -c localdb -cash 200000 --commission 0.015 --sizer :PercentSizer:percents=90 --fromdate 20220101 --todate 20230324 --strategy bt/strategies/lightvolume.py:Light_Volume:period=45,sr=0.85,br=0.95,rr=2.5

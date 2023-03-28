@@ -232,9 +232,6 @@ def getdatas(args):
 
     # Prepare some args
     dfkwargs = dict()
-       
-    if args.stock:
-        dfkwargs['stock'] = args.stock
     
     if args.format == 'yahoo_unreversed':
         dfkwargs['reverse'] = True
@@ -448,7 +445,7 @@ def parse_args(pargs=''):
     )
     group = parser.add_argument_group(title='Data options')
     # Data options
-    group.add_argument('--data', '-d', action='append', required=False, default='localdb'
+    group.add_argument('--data', '-d', action='append', required=False,
                        help='Data files to be added to the system')
 
     group = parser.add_argument_group(title='Stock data options')
@@ -499,8 +496,8 @@ def parse_args(pargs=''):
                        help='Disable the standard statistics observers')
 
     datakeys = list(DATAFORMATS)
-    group.add_argument('--stock', '--st', required=False,
-                       help='Stock name')
+    # group.add_argument('--stock', '--st', required=False,
+    #                    help='Stock name')
     
     group.add_argument('--format', '--csvformat', '-c', required=False,
                        default='btcsv', choices=datakeys,
