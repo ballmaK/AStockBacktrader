@@ -25,7 +25,7 @@ class LightVolume(bt.Strategy):
               ('rr', 2),
               ('tp', None),
               ('sl', None),
-              ('_pvvp', btind.pvolume.PVVP),
+              ('_pvvp', dict()),
               ('printlog', False),)  # 全局设定交易策略的参数, period是 MA 均值的长度
 
     def __init__(self):
@@ -39,7 +39,13 @@ class LightVolume(bt.Strategy):
         # 初始化交易指令、买卖价格和手续费
         self.order = None
         
-        self._pvvp = btind.pvolume.PVVP(period=self.p.period, br=self.p.br, sr=self.p.sr, rr=self.p.rr)
+        
+        # self._pvvp = [btind.pvolume.PVVP(period=self.p.period, br=self.p.br, sr=self.p.sr, rr=self.p.rr) for data in self.datas]
+        self.lvs = dict()
+        for data in self.datas:
+            # print(data._name,'0000')
+            # print(dir(btind.pvolume.PVVP))
+            self.lvs[data._name] = btind.pvolume.PVVP(data=data, period=self.p.period, br=self.p.br, sr=self.p.sr, rr=self.p.rr)
         
     def next(self):
         """
@@ -55,7 +61,8 @@ class LightVolume(bt.Strategy):
             if not self.position:  # 没有持仓
                 # 执行买入条件判断：当日成交量接近目标成交量
                 # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
-                if self._pvvp.pvvpb > 0:
+                # print(d._name, '----')
+                if self.lvs[d._name].pvvpb > 0:
                     # 执行买入
                     self.order = self.buy(data=d)
                 else:
@@ -66,7 +73,7 @@ class LightVolume(bt.Strategy):
                 # shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
                 take_profit  = (d.close[0] - self.position.price)/self.position.price*100 >= self.p.tp if self.p.tp else False
                 stop_less = (d.close[0] - self.position.price)/self.position.price*100 < -self.p.sl if self.p.sl else False
-                if self._pvvp.pvvps[0] > 0 or stop_less or take_profit:
+                if self.lvs[d._name].pvvps[0] > 0: #or stop_less or take_profit:
                     # 执行卖出
                     self.order = self.sell(data=d)
                 else:
@@ -95,7 +102,7 @@ class LightVolume(bt.Strategy):
         if order.status in [order.Completed]:
             if order.isbuy():
                 self.log(
-                    f"BUY:\nPRICE:{order.executed.price},\
+                    f"BUY:{order.data._name}\nPRICE:{order.executed.price},\
                 COST:{order.executed.value},\
                 COMM:{order.executed.comm}"
                 )
@@ -103,7 +110,7 @@ class LightVolume(bt.Strategy):
                 self.buycomm = order.executed.comm
             else:
                 self.log(
-                    f"SELL:\nPRICE：{order.executed.price},\
+                    f"SELL:{order.data._name}\nPRICE：{order.executed.price},\
                 COST: {order.executed.value},\
                 COMM{order.executed.comm}"
                 )

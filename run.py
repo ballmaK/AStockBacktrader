@@ -96,7 +96,8 @@ def run(pargs=''):
         if not args.fromdate or not args.todate:
             print(f'** 开始/结束日期未给定')
             return
-        print(select_stock_daily(stock=args.stock, fromdate=args.fromdate, todate=args.todate))
+        print(args.data)
+        print(select_stock_daily(stock=args.data, fromdate=args.fromdate, todate=args.todate))
         return
 
     cer_kwargs_str = args.cerebro
