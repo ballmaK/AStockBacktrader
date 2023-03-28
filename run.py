@@ -448,7 +448,7 @@ def parse_args(pargs=''):
     )
     group = parser.add_argument_group(title='Data options')
     # Data options
-    group.add_argument('--data', '-d', action='append', required=False,
+    group.add_argument('--data', '-d', action='append', required=False, default='localdb'
                        help='Data files to be added to the system')
 
     group = parser.add_argument_group(title='Stock data options')
