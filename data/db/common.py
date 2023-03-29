@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; py-indent-offset:4 -*-
 
-import sys
-import os
+import random
 import akshare as ak
 
 # sys.path.append("../..")
@@ -61,6 +60,12 @@ def select_stock_daily(stock, fromdate, todate):
     start_date = datetime.strptime(str(fromdate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     end_date = datetime.strptime(str(todate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+
+def select_random_stock(stock_num=10):
+    stocks = mapper.select_all_code()
+    stock_start = random.randint(0, len(stocks) - stock_num - 1)
+    stock_end = stock_start + stock_num
+    return stocks[stock_start:stock_end]
 
 def select_random_stock_data(fromdate, todate, stock_num=10):
     pass

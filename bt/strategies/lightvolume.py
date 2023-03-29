@@ -8,6 +8,8 @@ import pandas as pd
 # import policy.indicators
 
 import bt.indicators as btind
+from backtrader.utils.py3 import iteritems
+from pandas import DataFrame as DF
 
 plt.rcParams["font.sans-serif"] = ["SimHei"]  # 设置画图时的中文显示
 plt.rcParams["axes.unicode_minus"] = False  # 设置画图时的负号显示
@@ -58,7 +60,8 @@ class LightVolume(bt.Strategy):
                 return
             # 检查是否持
             
-            if not self.position:  # 没有持仓
+            # print(self.broker.getposition(d), d._name)
+            if not self.broker.getposition(d):  # 没有持仓
                 # 执行买入条件判断：当日成交量接近目标成交量
                 # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
                 # print(d._name, '----')
@@ -102,7 +105,7 @@ class LightVolume(bt.Strategy):
         if order.status in [order.Completed]:
             if order.isbuy():
                 self.log(
-                    f"BUY:{order.data._name}\nPRICE:{order.executed.price},\
+                    f"BUY:{order.data._name},PRICE:{order.executed.price},\
                 COST:{order.executed.value},\
                 COMM:{order.executed.comm}"
                 )
@@ -110,21 +113,22 @@ class LightVolume(bt.Strategy):
                 self.buycomm = order.executed.comm
             else:
                 self.log(
-                    f"SELL:{order.data._name}\nPRICE：{order.executed.price},\
+                    f"SELL:{order.data._name},PRICE：{order.executed.price},\
                 COST: {order.executed.value},\
                 COMM{order.executed.comm}"
                 )
             self.bar_executed = len(self)
             side = 'BUY' if order.isbuy() else 'SELL'
             self.orders.append({
-                'datetime': self.datas[0].datetime.datetime(),
+                'datetime': order.data.datetime.datetime(),
                 'ref': order.ref,
                 'size': abs(order.size),
                 'price': order.executed.price,
                 'value': order.executed.value,
                 'commission': order.executed.comm,
                 'side': side,
-                'price_now': self.data.close.array[-1]
+                'price_now': order.data.close.array[-1],
+                'stock': order.data._name,
             })
 
             # 如果指令取消/交易失败, 报告结果
@@ -138,7 +142,7 @@ class LightVolume(bt.Strategy):
         """
         if not trade.isclosed:
             return
-        self.log(f"策略收益：\n毛收益 {trade.pnl:.2f}, 净收益 {trade.pnlcomm:.2f}")
+        self.log(f"策略收益：毛收益 {trade.pnl:.2f}, 净收益 {trade.pnlcomm:.2f}")
 
     def stop(self):
         """
@@ -146,4 +150,24 @@ class LightVolume(bt.Strategy):
         """
         # self.log("(周期天数 %2d日)(RB %2f)(RS %2f) 期末总资金 %.2f" % (self.params.period, self.params.rate_buy, self.params.rate_sell, self.broker.getvalue()), do_print=True)
         # print(self.broker.startingcash, self.analyzers.mysharpe.get_analysis())
+        # print(DF.from_records(iteritems(self.analyzers.pyfolio.get_analysis())))
+        # for i, a in enumerate(self.analyzers):
+        #     # print(dir(a))
+        #     # print(dir(a.get_analysis()))
+        #     print(a)
+        #     if isinstance(a, bt.analyzers.PyFolio):
+        #         print('found pyfolio analysis')
+        #         # analyzer = self.analyzers.getbyname('pyfolio',)
+        #         # print(dir(a))
+        #         print(a.get_pf_items(),'=================')
+        #         # returns, positions, transactions, gross_lev = a.get_pf_items()
+        #         # print(returns, positions, transactions, gross_lev)
+
+        #     if isinstance(a, bt.analyzers.Returns):
+        #         analyzer = self.analyzers.getbyname('returns',)
+        #         print('found pyfolio returns')
+            
+        #         print(dir(analyzer))
+        #         for k, v in analyzer.get_analysis().items():
+        #             print('{}: {}'.format(k, v))
         pass

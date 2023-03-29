@@ -33,6 +33,7 @@ import backtrader as bt
 
 from data.db import *
 from bt.feeds import *
+from utils import btret as br
 
 DATAFORMATS = dict(
     btcsv=bt.feeds.BacktraderCSVData,
@@ -168,7 +169,7 @@ def run(pargs=''):
         hook(cerebro, **kwargs)
     runsts = cerebro.run()
     runst = runsts[0]  # single strategy and no optimization
-
+    br.strat_ret_handler(cerebro, runst)
     if args.pranalyzer or args.ppranalyzer:
         if runst.analyzers:
             print('====================')
@@ -261,6 +262,13 @@ def getdatas(args):
         dfkwargs['compression'] = args.compression
 
     datas = list()
+    if 'stock-' in args.data[0]:
+        stock_num = args.data[0].split('-')[1]
+        if stock_num == 'all':
+            args.data = common.select_all_stocks()
+        else:
+            args.data = common.select_random_stock(int(stock_num))
+    
     for dname in args.data:
         dfkwargs['dataname'] = dname
         data = dfcls(**dfkwargs)
@@ -446,7 +454,7 @@ def parse_args(pargs=''):
     )
     group = parser.add_argument_group(title='Data options')
     # Data options
-    group.add_argument('--data', '-d', action='append', required=False,
+    group.add_argument('--data', '-d', action='append', required=True,
                        help='Data files to be added to the system')
 
     group = parser.add_argument_group(title='Stock data options')
