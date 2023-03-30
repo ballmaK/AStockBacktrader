@@ -20,8 +20,10 @@ def runstrategy():
     else:
         todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
     
-    # codes = common.select_all_stocks()
-    codes = common.select_random_stock(3)
+    if args.stock_num == 'all':
+        codes = common.select_all_stocks()
+    else:
+        codes = common.select_random_stock(int(args.stock_num))
 
     results = []
     for code in codes:
@@ -68,7 +70,7 @@ def runstrategy():
                 results.append(((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now)))
     else:
         df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
-        df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}.csv", header=True)
+        df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
     
 
     
@@ -90,6 +92,9 @@ def parse_args():
 
     parser.add_argument('--cash', default=100000, type=int, required=True,
                         help='Starting Cash')
+    
+    parser.add_argument('--stock-num', default='10',
+                        help='Stock pool number')
 
     parser.add_argument('--runnext', action='store_true',
                         help='Use next by next instead of runonce')
@@ -100,7 +105,7 @@ def parse_args():
     parser.add_argument('--oldsync', action='store_true',
                         help='Use old data synchronization method')
 
-    parser.add_argument('--commperc', default=0.005, type=float,
+    parser.add_argument('--commperc', default=0.001, type=float,
                         help='Percentage commission (0.005 is 0.5%%')
 
     parser.add_argument('--numfigs', '-n', default=1,
