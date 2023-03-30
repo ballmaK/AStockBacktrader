@@ -6,32 +6,39 @@ import argparse
 import datetime
 import pandas as pd
 import backtrader as bt
-from .data.db import common
+from data.db import common
 from bt.strategies.lightvolume import LightVolume
+from utils.datautils import df_convert
+from utils.timeutils import *
 
 def runstrategy():
     args = parse_args()
     
-    codes = common.select_all_stocks()
-    end_date  = common.get_lastest_trade_date().replace('-', '')
-    start_cash = 100000
-    total_cash = 0
-    current_cash = 0
+    fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
+    if not args.todate:
+        todate  = common.get_lastest_trade_date().replace('-', '')
+    else:
+        todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
+    
+    # codes = common.select_all_stocks()
+    codes = common.select_random_stock(3)
+
     results = []
     for code in codes:
-        total_cash = total_cash + start_cash
         # Create a cerebro
         cerebro = bt.Cerebro()
 
         # Get the dates from the args
-        fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
-        todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
         
-        cerebro
+        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        
+        cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
+        
         # Add the strategy
-        cerebro.addstrategy(LightVolume,
-                            period=args.period,
-                            stake=args.stake)
+        cerebro.addstrategy(LightVolume)
+        
+        cerebro.addanalyzer(bt.analyzers.SharpeRatio)
+        cerebro.addanalyzer(bt.analyzers.Returns)
 
         # Add the commission - only stocks like a for each operation
         cerebro.broker.setcash(args.cash)
@@ -44,12 +51,24 @@ def runstrategy():
         ret = cerebro.run(runonce=not args.runnext,
                     preload=not args.nopreload,
                     oldsync=args.oldsync)
-        if cerebro:
-            results.append(cerebro)
+        if ret:
+            strats = [ strat for i, strat in enumerate(ret)]
+            # print(dir(strats[0]))
+            # print(strats[0].orders[-1])
+            sharpe = strats[0].analyzers.sharperatio.get_analysis()['sharperatio']
+            rnorm100 = strats[0].analyzers.returns.get_analysis()['rnorm100']
+            if len(strats[0].orders) >= 1:
+                last_order_date = strats[0].orders[-1]['datetime']
+                last_order_type = strats[0].orders[-1]['side']
+                last_order_price = strats[0].orders[-1]['price']
+                last_order_price_now = strats[0].orders[-1]['price_now']
+                today = datetime.datetime.strptime(common.get_lastest_trade_date(), "%Y-%m-%d")
+                print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                # if last_order_date == today and last_order_type == 'BUY':
+                results.append(((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now)))
     else:
-        df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100'])
-        print(df)
-
+        df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
+        df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}.csv", header=True)
     
 
     
@@ -59,17 +78,17 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Select Stock Script')
 
     parser.add_argument('--fromdate', '-f',
-                        default='20220101',
+                        default='20220101', required=True,
                         help='Starting date in YYYYMMDD format')
 
     parser.add_argument('--todate', '-t',
-                        default='20230324',
+                        default='20230324', 
                         help='Starting date in YYYYMMDD format')
 
     parser.add_argument('--period', default=45, type=int,
                         help='Period to apply to the LightVolume')
 
-    parser.add_argument('--cash', default=100000, type=int,
+    parser.add_argument('--cash', default=100000, type=int, required=True,
                         help='Starting Cash')
 
     parser.add_argument('--runnext', action='store_true',
