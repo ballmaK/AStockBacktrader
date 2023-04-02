@@ -89,7 +89,7 @@ def run(pargs=''):
         return
     # 更新每日数据
     if args.update_daily:
-        update_stock_daily(stock=args.data, fromdate=args.fromdate, todate=args.todate)
+        update_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate)
         return
         
     # 查询日线数据

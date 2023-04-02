@@ -3,6 +3,7 @@
 
 import random
 import akshare as ak
+import traceback
 
 # sys.path.append("../..")
 import utils.timeutils as timeutils
@@ -88,7 +89,7 @@ def init_stock_info():
 
 def __init_stock_daily(stock, start_date, end_date, adjust):
     try:
-        # print('-------------------------------- ', stock, ' ---------------------------------')
+        print('-------------------------------- ', stock, ' ---------------------------------')
         # exist_df = mapper.select_data_by_code(stock, 1)
         # if exist_df.empty:
         df = ak.stock_zh_a_daily(symbol=stock, start_date=start_date, end_date=end_date, adjust=adjust)
@@ -111,6 +112,7 @@ def __init_stock_daily(stock, start_date, end_date, adjust):
         # else:
             # print('[%s] already exist, pass' % stock)
     except Exception as e:
+        traceback.print_exc(e)
         print('error', stock, e)
         
 if __name__ == '__main__':
