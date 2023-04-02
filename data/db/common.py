@@ -14,7 +14,7 @@ from . import mapper
 from . import constants
 
 def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
-    if not stock:
+    if stock == 'all':
         stocks = select_all_stocks()
     else:
         stocks = [stock]
