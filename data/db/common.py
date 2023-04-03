@@ -91,7 +91,7 @@ def init_stock_info():
 
 def __init_stock_daily(stock, start_date, end_date, adjust):
     try:
-        print('-------------------------------- ', stock, ' ---------------------------------')
+        # print('-------------------------------- ', stock, ' ---------------------------------')
         # exist_df = mapper.select_data_by_code(stock, 1)
         # if exist_df.empty:
         df = ak.stock_zh_a_daily(symbol=stock, start_date=start_date, end_date=end_date, adjust=adjust)

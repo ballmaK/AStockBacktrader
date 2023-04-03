@@ -8,9 +8,71 @@ import pandas as pd
 import backtrader as bt
 from pandas import DataFrame as DF
 from data.db import common
+from utils import threadpool
 from bt.strategies.lightvolume import LightVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
+
+def run(code, args, fromdate, todate):
+    try:
+        # filter bj market
+        if 'bj' in code or 'sh688' in code:
+            return
+        # Create a cerebro
+        cerebro = bt.Cerebro()
+
+        # Get the dates from the args
+        
+        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        
+        cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
+        
+        # Add the strategy
+        cerebro.addstrategy(LightVolume)
+        
+        cerebro.addanalyzer(bt.analyzers.SharpeRatio)
+        cerebro.addanalyzer(bt.analyzers.Returns)
+        cerebro.addanalyzer(bt.analyzers.VWR)
+        
+        cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
+
+        # Add the commission - only stocks like a for each operation
+        cerebro.broker.setcash(args.cash)
+
+        # Add the commission - only stocks like a for each operation
+        cerebro.broker.setcommission(commission=args.commperc)
+
+        # And run it
+        
+        # ret = cerebro.run(runonce=not args.runnext,
+        #             preload=not args.nopreload,
+        #             oldsync=args.oldsync)
+        ret = cerebro.run()
+        if ret:
+            strats = [ strat for i, strat in enumerate(ret)]
+            # print('Sharpe Ratio:', strats[0].analyzers.sharperatio.get_analysis())
+            # print('Returns: ', strats[0].analyzers.returns.get_analysis())
+            # print('VWR: ', strats[0].analyzers.vwr.get_analysis())
+            sharpe = strats[0].analyzers.sharperatio.get_analysis()['sharperatio']
+            rnorm100 = strats[0].analyzers.returns.get_analysis()['rnorm100']
+            # print(sharpe, rnorm100)
+            if len(strats[0].orders) >= 1:
+                last_order_date = strats[0].orders[-1]['datetime']
+                last_order_type = strats[0].orders[-1]['side']
+                last_order_price = strats[0].orders[-1]['price']
+                last_order_price_now = strats[0].orders[-1]['price_now']
+                today = datetime.datetime.strptime(common.get_lastest_trade_date(), "%Y-%m-%d")
+                print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                # if last_order_date == today and last_order_type == 'BUY':
+                return ((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
+            # trade_df = DF.from_records(strats[0].orders)
+            # print(trade_df)
+    except Exception as e:
+        print(f'{code} select error')
+        
+def handle_results(request, result):
+    if result:
+        return result
 
 def runstrategy():
     args = parse_args()
@@ -27,66 +89,17 @@ def runstrategy():
         codes = common.select_random_stock(int(args.stock_num))
 
     results = []
-    for code in codes:
-        try:
-            # filter bj market
-            if 'bj' in code or 'sh688' in code:
-                continue
-            # Create a cerebro
-            cerebro = bt.Cerebro()
-
-            # Get the dates from the args
-            
-            data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
-            
-            cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
-            
-            # Add the strategy
-            cerebro.addstrategy(LightVolume)
-            
-            cerebro.addanalyzer(bt.analyzers.SharpeRatio)
-            cerebro.addanalyzer(bt.analyzers.Returns)
-            cerebro.addanalyzer(bt.analyzers.VWR)
-            
-            cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
-
-            # Add the commission - only stocks like a for each operation
-            cerebro.broker.setcash(args.cash)
-
-            # Add the commission - only stocks like a for each operation
-            cerebro.broker.setcommission(commission=args.commperc)
-
-            # And run it
-            
-            # ret = cerebro.run(runonce=not args.runnext,
-            #             preload=not args.nopreload,
-            #             oldsync=args.oldsync)
-            ret = cerebro.run()
-            if ret:
-                strats = [ strat for i, strat in enumerate(ret)]
-                # print('Sharpe Ratio:', strats[0].analyzers.sharperatio.get_analysis())
-                # print('Returns: ', strats[0].analyzers.returns.get_analysis())
-                # print('VWR: ', strats[0].analyzers.vwr.get_analysis())
-                sharpe = strats[0].analyzers.sharperatio.get_analysis()['sharperatio']
-                rnorm100 = strats[0].analyzers.returns.get_analysis()['rnorm100']
-                # print(sharpe, rnorm100)
-                if len(strats[0].orders) >= 1:
-                    last_order_date = strats[0].orders[-1]['datetime']
-                    last_order_type = strats[0].orders[-1]['side']
-                    last_order_price = strats[0].orders[-1]['price']
-                    last_order_price_now = strats[0].orders[-1]['price_now']
-                    today = datetime.datetime.strptime(common.get_lastest_trade_date(), "%Y-%m-%d")
-                    print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
-                    # if last_order_date == today and last_order_type == 'BUY':
-                    results.append(((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now)))
-                # trade_df = DF.from_records(strats[0].orders)
-                # print(trade_df)
-        except Exception as e:
-            print(f'{code} select error')
-            continue
-    else:
-        df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
-        df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    pool = threadpool.ThreadPool(20, q_size=len(codes), resq_size=len(codes))
+    args = [([stock, args, fromdate, todate], {}) for stock in codes]
+    requests = threadpool.makeRequests(run, args, callback=handle_results)
+    [pool.putRequest(req) for req in requests]
+    pool.wait()
+    # print(results)
+    # for code in codes:
+    #     results.append(run(code, args, fromdate, todate))
+    # else:
+    df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
+    df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
     
 
     
