@@ -58,8 +58,10 @@ def select_all_stocks():
 
 def select_stock_daily(stock, fromdate, todate):
     code = stock
-    start_date = datetime.strptime(str(fromdate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
-    end_date = datetime.strptime(str(todate), timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
+    end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
 def select_random_stock(stock_num=10):

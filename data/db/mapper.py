@@ -78,7 +78,7 @@ def select_data(code, date, limit):
     return df
 
 def select_data_between_date(code, start_date, end_date):
-    sql = "select * from %s where code='%s' and TIMESTAMP(date) >= TIMESTAMP('%s') and TIMESTAMP(date) <= TIMESTAMP('%s')" % (constants.STOCK_DAILY_TABLE_NAME,code, start_date, end_date)
+    sql = "select * from %s where code='%s' and date >= '%s' and date <= '%s'" % (constants.STOCK_DAILY_TABLE_NAME,code, start_date, end_date)
     # print(sql)
     try:
         df = pd.read_sql(sql=sql, con=base.engine())

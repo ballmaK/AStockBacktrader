@@ -28,6 +28,7 @@ def strat_ret_handler(cerebro, strat):
         else:
             df = DF.from_records(iteritems(a.get_analysis()))
             # print(df)
+            results = []
             sharpe = strat.analyzers.sharperatio.get_analysis()['sharperatio']
             rnorm100 = strat.analyzers.returns.get_analysis()['rnorm100']
             if len(strat.orders) >= 1:
@@ -38,8 +39,9 @@ def strat_ret_handler(cerebro, strat):
                 # today = datetime.strptime(getMaxTradeDate(), "%Y-%m-%d")
                 code = strat.orders[-1]['stock']
                 print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                results.append(((code),(sharpe),(rnorm100)))
                 if last_order_type == 'BUY': # last_order_date == today and 
-                    df = pd.DataFrame((code, sharpe, rnorm100), columns=['code', 'sharpe', 'rnorm100'])
+                    df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100'])
                     print(df)
     else:
         trade_df = DF.from_records(strat.orders)

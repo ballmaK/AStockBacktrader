@@ -6,6 +6,7 @@ import argparse
 import datetime
 import pandas as pd
 import backtrader as bt
+from pandas import DataFrame as DF
 from data.db import common
 from bt.strategies.lightvolume import LightVolume
 from utils.datautils import df_convert
@@ -27,6 +28,9 @@ def runstrategy():
 
     results = []
     for code in codes:
+        # filter bj market
+        if 'bj' in code or 'sh688' in code:
+            continue
         # Create a cerebro
         cerebro = bt.Cerebro()
 
@@ -41,6 +45,9 @@ def runstrategy():
         
         cerebro.addanalyzer(bt.analyzers.SharpeRatio)
         cerebro.addanalyzer(bt.analyzers.Returns)
+        cerebro.addanalyzer(bt.analyzers.VWR)
+        
+        cerebro.addsizer(bt.sizers.PercentSizer, percents=90)
 
         # Add the commission - only stocks like a for each operation
         cerebro.broker.setcash(args.cash)
@@ -50,15 +57,18 @@ def runstrategy():
 
         # And run it
         
-        ret = cerebro.run(runonce=not args.runnext,
-                    preload=not args.nopreload,
-                    oldsync=args.oldsync)
+        # ret = cerebro.run(runonce=not args.runnext,
+        #             preload=not args.nopreload,
+        #             oldsync=args.oldsync)
+        ret = cerebro.run()
         if ret:
             strats = [ strat for i, strat in enumerate(ret)]
-            # print(dir(strats[0]))
-            # print(strats[0].orders[-1])
+            # print('Sharpe Ratio:', strats[0].analyzers.sharperatio.get_analysis())
+            # print('Returns: ', strats[0].analyzers.returns.get_analysis())
+            # print('VWR: ', strats[0].analyzers.vwr.get_analysis())
             sharpe = strats[0].analyzers.sharperatio.get_analysis()['sharperatio']
             rnorm100 = strats[0].analyzers.returns.get_analysis()['rnorm100']
+            # print(sharpe, rnorm100)
             if len(strats[0].orders) >= 1:
                 last_order_date = strats[0].orders[-1]['datetime']
                 last_order_type = strats[0].orders[-1]['side']
@@ -68,6 +78,8 @@ def runstrategy():
                 print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
                 results.append(((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now)))
+            # trade_df = DF.from_records(strats[0].orders)
+            # print(trade_df)
     else:
         df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
         df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
