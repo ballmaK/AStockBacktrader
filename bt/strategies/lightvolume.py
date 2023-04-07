@@ -65,6 +65,7 @@ class LightVolume(bt.Strategy):
                 # 执行买入条件判断：当日成交量接近目标成交量
                 # if buy_rate >= self.params.br and self.data_close[0] <= min_price:
                 # print(d._name, '----')
+                # print(f'BUY: {self.lvs[d._name].maxpp[0]}, {self.lvs[d._name].maxpp[0]/d.close[0]}, {d.close[0]}, {d.datetime.date(0)}')
                 if self.lvs[d._name].pvvpb > 0:
                     # 执行买入
                     self.order = self.buy(data=d)
@@ -76,9 +77,13 @@ class LightVolume(bt.Strategy):
                 # shouldSell = ((self.data_close[0] - self.position.price)/self.position.price < -0.1)# or ((self.data_close[0] - self.position.price)/self.position.price >= 0.5)
                 take_profit  = (d.close[0] - self.position.price)/self.position.price*100 >= self.p.tp if self.p.tp else False
                 stop_less = (d.close[0] - self.position.price)/self.position.price*100 < -self.p.sl if self.p.sl else False
+                # print(f'SEL: {self.lvs[d._name].minpp[0]},  {self.lvs[d._name].minpp[0]/d.close[0]},{d.close[0]},  {(d.close[0] - self.position.price)/self.position.price}, {d.datetime.date(0)}')
                 if self.lvs[d._name].pvvps[0] > 0: #or stop_less or take_profit:
                     # 执行卖出
                     self.order = self.sell(data=d)
+                    # print(f'SEL: {self.lvs[d._name].minpp[0]},  {self.lvs[d._name].minpp[0]/d.close[0]}, {d.close[0]}')
+
+                    # print(f'SELL: {self.lvs[d._name].mpp[0]}, {self.lvs[d._name].mpp[0]/d.close[0]}, {d.close[0]}')
                 else:
                     pass
                     # self.log("HOLD,%.2f %.2f %.2f" % (self.data_close[0], buy_rate, sell_rate))

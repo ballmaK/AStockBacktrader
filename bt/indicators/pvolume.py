@@ -29,7 +29,7 @@ class MMVP(Indicator):
     def next(self):
         
         self.lines.minvp[0] = self.data.close.array[int(self.minidx[0])]
-        self.lines.maxvp[0] = self.data.close.array[int(self.minidx[0])]
+        self.lines.maxvp[0] = self.data.close.array[int(self.maxidx[0])]
         
 class BAVGV(Indicator):
     
@@ -51,9 +51,46 @@ class VPR(Indicator):
         
         super(VPR, self).__init__(data=self.data)
         
+class MVPR(Indicator):
+    
+    lines = ('minvpr', 'maxvpr', )
+    
+    params = (('period', 5), )
+    
+    def __init__(self, data):
+        self.data=data
+        self.pv = MMV(data=self.data, period=self.params.period)
+        self.mmvp = MMVP(data=self.data, period=self.p.period)
+        
+        super(MVPR, self).__init__(data=self.data)
+        
+    def next(self):
+        self.lines.maxvpr[0] = self.mmvp.lines.maxvp[0]/self.pv.lines.maxvolume[0] * self.data.volume[0]
+        self.lines.minvpr[0] = self.mmvp.lines.minvp[0]/self.pv.lines.minvolume[0] * self.data.volume[0]
+        
+class MPP(Indicator):
+    
+    lines = ('maxpp', 'minpp')
+    
+    params = (('period', 5), )
+    
+    def __init__(self, data):
+        self.data=data
+        self.pv = MMV(data=self.data, period=self.params.period)
+        self.mmvp = MMVP(data=self.data, period=self.p.period)
+        
+        super(MPP, self).__init__(data=self.data)
+        
+    def next(self):
+        
+        self.lines.maxpp[0] = self.mmvp.lines.maxvp[0]/self.pv.lines.maxvolume[0] * self.data.volume[0]
+        self.lines.minpp[0] = self.mmvp.lines.minvp[0]/self.pv.lines.minvolume[0] * self.data.volume[0]
+
+        # print(self.lines.mpp[0],self.mmvp.lines.maxvp[0],self.pv.lines.maxvolume[0], self.data.volume[0])
+        
 class PVVP(Indicator):
     
-    lines = ('pvvpb', 'pvvps', 'vsma', )
+    lines = ('pvvpb', 'pvvps', 'vsma', 'maxpp', 'minpp', )
     
     params = (('period', 90), ('sr', 0.9), ('br', 0.8), ('rr', 2),)
     
@@ -63,11 +100,18 @@ class PVVP(Indicator):
         self.pv = MMV(data=self.data, period=self.params.period)
         self.vpr = VPR(data=self.data)
         self.lines.vsma = self.data.close / bt.indicators.MovingAverageSimple(self.data.volume, period=10) * self.data.volume
+        self.mpp = MPP(data=self.data, period=self.p.period)
+        self.lines.maxpp = self.mpp.lines.maxpp
+        self.lines.minpp = self.mpp.lines.minpp
+        # self.lines.mpp = self.mpp
         super(PVVP, self).__init__(data=self.data)
         
     def next(self):
-        sigb = (self.vpr.lines.vpr[0] * self.pv.lines.maxvolume[0]) and (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0])
+        # sigb = (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0])
+        sigb = (self.lines.maxpp[0]/self.data.close[0] <= 0.15) and (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0])
+
         sigs = self.data.close[0] >= (self.pv.lines.maxvolume[0] * self.vpr.lines.vpr[0] * self.p.sr) or (self.mmvp.lines.minvp[0] * self.p.rr <= self.lines.vsma[0])
+        # sigs = self.lines.minpp[0]/self.data.close[0] < 1.1
         # if sigb:
         #     print(sigb, self.mmvp.lines.minvp[0])
         self.lines.pvvpb[0] = self.data.close[0] if sigb else 0
