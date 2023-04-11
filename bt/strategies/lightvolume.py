@@ -22,9 +22,9 @@ class LightVolume(bt.Strategy):
     alias = ('Light_Volume',)
     
     params = (("period",45),
-              ('br', 0.90),
-              ('sr', 0.80),
-              ('rr', 2),
+              ('br', 0.95),
+              ('sr', 0.85),
+              ('rr', 2.5),
               ('tp', None),
               ('sl', None),
               ('_pvvp', dict()),
