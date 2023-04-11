@@ -1,5 +1,6 @@
 STOCK_BASE_TABLE_NAME = 'stock_base'
 STOCK_DAILY_TABLE_NAME = 'stock_daily'
+STOCK_DAILY_RESULT_TABLE_NAME = 'stock_daily_result'
 STOCK_TRADE_LOG_TABLE_NAME = 'stock_trade_log'
 STOCK_TRADE_POLICY_RESULT_TABLE_NAME = 'stock_trade_policy_result'
 

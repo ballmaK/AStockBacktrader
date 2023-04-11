@@ -7,8 +7,8 @@ import datetime
 import pandas as pd
 import backtrader as bt
 from pandas import DataFrame as DF
-from data.db import common
-from utils import threadpool
+from data.db import common, base, constants
+from utils import threadpool, timeutils
 from bt.strategies.lightvolume import LightVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
@@ -16,6 +16,7 @@ from utils.timeutils import *
 def run(code, args, fromdate, todate):
     try:
         # filter bj market
+        exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
         if 'bj' in code or 'sh688' in code:
             return
         # Create a cerebro
@@ -61,10 +62,9 @@ def run(code, args, fromdate, todate):
                 last_order_type = strats[0].orders[-1]['side']
                 last_order_price = strats[0].orders[-1]['price']
                 last_order_price_now = strats[0].orders[-1]['price_now']
-                today = datetime.datetime.strptime(common.get_lastest_trade_date(), "%Y-%m-%d")
-                print(f"{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                # print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
-                return ((code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
+                return ((exe_date),(code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
             # trade_df = DF.from_records(strats[0].orders)
             # print(trade_df)
     except Exception as e:
@@ -91,15 +91,21 @@ def runstrategy():
     results = []
     pool = threadpool.ThreadPool(20, q_size=len(codes), resq_size=len(codes))
     args = [([stock, args, fromdate, todate], {}) for stock in codes]
-    requests = threadpool.makeRequests(run, args, callback=handle_results)
+    requests = threadpool.makeRequests(run, args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
     pool.wait()
     # print(results)
     # for code in codes:
     #     results.append(run(code, args, fromdate, todate))
     # else:
-    df = pd.DataFrame(results, columns=['code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
-    df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    df = pd.DataFrame([ result for result in results if result is not None], 
+                    #   index=['exe_date'],
+                      columns=['exe_date','code', 'sharpe', 'rnorm100','last_order_date','last_order_type','last_order_price','last_order_price_now'])
+    df['last_order_date'] = df['last_order_date'].map(timeutils.reformat_date)
+    df.set_index(['exe_date'], inplace=True)
+    # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    if not df.empty:
+        base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")
     
 
     
