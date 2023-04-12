@@ -119,7 +119,6 @@ def parse_args():
                         help='Starting date in YYYYMMDD format')
 
     parser.add_argument('--todate', '-t',
-                        default='20230324', 
                         help='Starting date in YYYYMMDD format')
 
     parser.add_argument('--period', default=45, type=int,
