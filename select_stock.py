@@ -25,7 +25,6 @@ def run(code, args, fromdate, todate):
         # Get the dates from the args
         
         data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
-        
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
         
         # Add the strategy
@@ -80,9 +79,9 @@ def runstrategy():
     fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
     if not args.todate:
         todate  = common.get_lastest_trade_date().replace('-', '')
+        todate = datetime.datetime.strptime(todate, '%Y%m%d')
     else:
         todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
-    
     if args.stock_num == 'all':
         codes = common.select_all_stocks()
     else:
@@ -90,8 +89,8 @@ def runstrategy():
 
     results = []
     pool = threadpool.ThreadPool(20, q_size=len(codes), resq_size=len(codes))
-    args = [([stock, args, fromdate, todate], {}) for stock in codes]
-    requests = threadpool.makeRequests(run, args, callback=lambda x,y: results.append(y))
+    req_args = [([stock, args, fromdate, todate], {}) for stock in codes]
+    requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
     pool.wait()
     # print(results)
