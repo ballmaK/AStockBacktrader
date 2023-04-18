@@ -254,6 +254,10 @@ def getdatas(args):
             fmtstr += 'T%H:%M:%S'
         todate = datetime.datetime.strptime(args.todate, DATE_FORMAT_TO_DAY_WITHOUT_DASH)
         dfkwargs['todate'] = todate
+    else:
+        todate  = common.get_lastest_trade_date().replace('-', '')
+        todate = datetime.datetime.strptime(todate, DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+        dfkwargs['todate'] = todate
 
     if args.timeframe is not None:
         dfkwargs['timeframe'] = TIMEFRAMES[args.timeframe]

@@ -106,14 +106,16 @@ def runstrategy():
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
-        send_message(bot, df)
+        send_message(bot, df, args)
         base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
     else:
         message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
-        bot.send_message(message)     
+        bot.send_message(message, df, args)     
     
-def send_message(bot, df):
+def send_message(bot, df, args):
+    if not args.notify:
+        return
     buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
     sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
     # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
@@ -183,6 +185,9 @@ def parse_args():
 
     parser.add_argument('--numfigs', '-n', default=1,
                         help='Plot using numfigs figures')
+    
+    parser.add_argument('--notify', '-nt', action='store_true', default=False,
+                        help='Whether to send notify message')
 
     return parser.parse_args()
 
