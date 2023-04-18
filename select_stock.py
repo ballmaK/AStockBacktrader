@@ -12,6 +12,7 @@ from utils import threadpool, timeutils
 from bt.strategies.lightvolume import LightVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
+from message.bot import *
 
 def run(code, args, fromdate, todate):
     try:
@@ -103,10 +104,20 @@ def runstrategy():
     df['last_order_date'] = df['last_order_date'].map(timeutils.reformat_date)
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
+        send_message(bot, df)
         base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")
+    else:
+        message = str.format(f'【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无推荐')
+        bot.send_message(message)
     
-
+def send_message(bot, df):
+    buy_df = df.loc[df['last_order_type'] == 'BUY', ['code', 'rnorm100','last_order_date','last_order_type']]
+    sell_df = df.loc[df['last_order_type'] == 'SELL', ['code', 'rnorm100','last_order_date','last_order_type']]
+    # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
+    buy_message_title = str.format(f'# 【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入')
+    bot.send_message(buy_message_title)
     
 
 
