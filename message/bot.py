@@ -32,7 +32,6 @@ class QYWXMessageBot(MessageBot):
         self.webhook_url = hook
         
     def send_message(self, message: QYWXMessage) -> bool:
-        print(message)
         headers = {'Content-Type': 'application/json;charset=utf-8'}
         self._log(f'MessageBot:<REQT>{json.dumps(message.data)}')
         response = requests.post(self.webhook_url, headers=headers, data=json.dumps(message.data))

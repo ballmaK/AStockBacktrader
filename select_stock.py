@@ -107,22 +107,46 @@ def runstrategy():
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df)
-        base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")
+        base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
     else:
-        message = str.format(f'【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无推荐')
-        bot.send_message(message)
+        message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
+        message = QYWXMessageMD(message_str)
+        bot.send_message(message)     
     
 def send_message(bot, df):
-    buy_df = df.loc[df['last_order_type'] == 'BUY', ['code', 'rnorm100','last_order_date','last_order_type']]
-    sell_df = df.loc[df['last_order_type'] == 'SELL', ['code', 'rnorm100','last_order_date','last_order_type']]
+    buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
+    sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
     # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
     buy_message = str.format(
-        f'<font color="warning"># 【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入</font>\n')
-    for row in df.itertuples(index=False):
-        msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100}\n')
+        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入</font>\n')
+    
+    sell_message = str.format(
+        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐卖出</font>\n')
+    for row in buy_df.itertuples(index=False):
+        msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
         buy_message = buy_message + msg_row
-    message = QYWXMessageMD(buy_message)
-    bot.send_message(message)
+    else:
+        if buy_df.empty:
+            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】买入无推荐</font>')
+            message = QYWXMessageMD(message_str)
+            bot.send_message(message)
+        else:
+            message = QYWXMessageMD(buy_message)
+            bot.send_message(message)
+        
+    for row in sell_df.itertuples(index=False):
+        msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
+        sell_message = sell_message + msg_row
+    else:
+        if sell_df.empty:
+            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】卖出无推荐</font>')
+            message = QYWXMessageMD(message_str)
+            bot.send_message(message)
+        else:
+            message = QYWXMessageMD(sell_message)
+            bot.send_message(message)
+    
+    
     
 
 
