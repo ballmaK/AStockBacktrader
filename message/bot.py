@@ -5,6 +5,9 @@ import json
 
 WEB_HOOK = os.environ.get('WEB_HOOK') if (os.environ.get('WEB_HOOK') != None) else "web_hook"
 
+class QYWXMessage():
+    data = ''
+
 class MessageBot():
     
     def __init__(self, logd=False):
@@ -28,26 +31,19 @@ class QYWXMessageBot(MessageBot):
         self._log(f'Init bot with hook: {hook}')
         self.webhook_url = hook
         
-    def send_message(self, message: str) -> bool:
+    def send_message(self, message: QYWXMessage) -> bool:
+        print(message)
         headers = {'Content-Type': 'application/json;charset=utf-8'}
-        data = {
-            "msgtype": "text",
-            "text": {
-                "content": message
-            },
-        }
-        self._log(f'MessageBot:<REQT>{json.dumps(data)}')
-        response = requests.post(self.webhook_url, headers=headers, data=json.dumps(data))
+        self._log(f'MessageBot:<REQT>{json.dumps(message.data)}')
+        response = requests.post(self.webhook_url, headers=headers, data=json.dumps(message.data))
         self._log(f'MessageBot:<RESP>{response}')
         return super()._send_message(message)
 
-class QYWXMessage():
-    pass
 
-class QYWXMessageText():
+
+class QYWXMessageText(QYWXMessage):
     
     def __init__(self, content: str, log=False):
-        super().__init__(logd=log)
         self.data = {
             "msgtype": "text",
             "text": {
@@ -55,10 +51,9 @@ class QYWXMessageText():
             },
         }
         
-class QYWXMessageMD():
+class QYWXMessageMD(QYWXMessage):
     
     def __init__(self, content: str, log=False):
-        super().__init__(logd=log)
         self.data = {
             "msgtype": "markdown",
             "markdown": {
@@ -66,10 +61,9 @@ class QYWXMessageMD():
             },
         }
         
-class QYWXMessageIMG():
+class QYWXMessageIMG(QYWXMessage):
     
     def __init__(self, base64: str, md5: str, log=False):
-        super().__init__(logd=log)
         self.data = {
             "msgtype": "image",
             "image": {

@@ -116,8 +116,9 @@ def send_message(bot, df):
     buy_df = df.loc[df['last_order_type'] == 'BUY', ['code', 'rnorm100','last_order_date','last_order_type']]
     sell_df = df.loc[df['last_order_type'] == 'SELL', ['code', 'rnorm100','last_order_date','last_order_type']]
     # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
-    buy_message_title = str.format(f'# 【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入')
-    bot.send_message(buy_message_title)
+    buy_message = str.format(f'# 【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入')
+    message = QYWXMessageMD(buy_message)
+    bot.send_message(message)
     
 
 
