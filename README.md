@@ -44,4 +44,6 @@ python run.py -c localdb \
 
 python run.py -c localdb -cash 200000 --commission 0.001 --sizer :PercentSizer:percents=90 --fromdate 20220101 --strategy bt/strategies/lightvolume.py:Light_Volume:period=45,sr=0.85,br=0.95,rr=2.5 --plot -d sz002402
 
+python run.py -c localdb -cash 200000 --commission 0.001 --sizer :PercentSizer:percents=90 --fromdate 20200101 --strategy bt/strategies/bamboovolume.py:Bamboo_Volume:period=90,sr=1.35,br1=3,br2=1.1 --plot -d sh601677
+
 python select_stock.py --stock-num 5 -f 20200101 --cash 100000

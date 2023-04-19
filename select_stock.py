@@ -30,7 +30,7 @@ def run(code, args, fromdate, todate):
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
         
         # Add the strategy
-        cerebro.addstrategy(LightVolume)
+        # cerebro.addstrategy(LightVolume)
         cerebro.addstrategy(BambooVolume)
         
         cerebro.addanalyzer(bt.analyzers.SharpeRatio)
@@ -64,7 +64,7 @@ def run(code, args, fromdate, todate):
                 last_order_type = strats[0].orders[-1]['side']
                 last_order_price = strats[0].orders[-1]['price']
                 last_order_price_now = strats[0].orders[-1]['price_now']
-                # print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
                 return ((exe_date),(code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
             # trade_df = DF.from_records(strats[0].orders)
@@ -96,7 +96,7 @@ def runstrategy():
     requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
     pool.wait()
-    print(results)
+    # print(results)
     # for code in codes:
     #     results.append(run(code, args, fromdate, todate))
     # else:
