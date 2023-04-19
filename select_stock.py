@@ -10,6 +10,7 @@ from pandas import DataFrame as DF
 from data.db import common, base, constants
 from utils import threadpool, timeutils
 from bt.strategies.lightvolume import LightVolume
+from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
 from message.bot import *
@@ -30,6 +31,7 @@ def run(code, args, fromdate, todate):
         
         # Add the strategy
         cerebro.addstrategy(LightVolume)
+        cerebro.addstrategy(BambooVolume)
         
         cerebro.addanalyzer(bt.analyzers.SharpeRatio)
         cerebro.addanalyzer(bt.analyzers.Returns)
@@ -94,7 +96,7 @@ def runstrategy():
     requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
     pool.wait()
-    # print(results)
+    print(results)
     # for code in codes:
     #     results.append(run(code, args, fromdate, todate))
     # else:
