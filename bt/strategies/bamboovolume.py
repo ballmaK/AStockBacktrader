@@ -24,7 +24,7 @@ class BambooVolume(bt.Strategy):
     params = (('period', 90), 
               ('br1', 3), 
               ('br2', 1.1), 
-              ('sr', 1.1), 
+              ('sr', 1.35), 
               ('printlog', False),)  # 全局设定交易策略的参数, period是 MA 均值的长度
 
     def __init__(self):
