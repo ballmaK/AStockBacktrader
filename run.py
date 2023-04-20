@@ -30,7 +30,9 @@ import string
 import sys
 
 import backtrader as bt
-
+from backtrader_plotting import Bokeh
+from backtrader_plotting import OptBrowser
+from backtrader_plotting.schemes import Tradimo
 from data.db import *
 from bt.feeds import *
 from utils import btret as br
@@ -167,7 +169,7 @@ def run(pargs=''):
     ans = getfunctions(args.hooks, bt.Cerebro)
     for hook, kwargs in ans:
         hook(cerebro, **kwargs)
-    runsts = cerebro.run()
+    runsts = cerebro.run(optreturn=True)
     runst = runsts[0]  # single strategy and no optimization
     br.strat_ret_handler(cerebro, runst)
     if args.pranalyzer or args.ppranalyzer:
@@ -192,7 +194,12 @@ def run(pargs=''):
             pkwargs.update(ekwargs)
 
         # cerebro.plot(numfigs=args.plotfigs, style=args.plotstyle)
-        cerebro.plot(**pkwargs)
+        b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo())
+        # cerebro.plot(b)
+        # cerebro.plot(**pkwargs)
+        # bo = Bokeh()
+        browser = OptBrowser(b, runsts)
+        browser.start()
 
 
 def setbroker(args, cerebro):
