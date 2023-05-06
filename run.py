@@ -30,9 +30,9 @@ import string
 import sys
 
 import backtrader as bt
-from backtrader_plotting import Bokeh
-from backtrader_plotting import OptBrowser
-from backtrader_plotting.schemes import Tradimo
+# from backtrader_plotting import Bokeh
+# from backtrader_plotting import OptBrowser
+# from backtrader_plotting.schemes import Tradimo
 from data.db import *
 from bt.feeds import *
 from utils import btret as br
