@@ -14,6 +14,7 @@ from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
 from message.bot import *
+from run import getobjects
 
 def run(code, args, fromdate, todate):
     try:
@@ -31,7 +32,9 @@ def run(code, args, fromdate, todate):
         
         # Add the strategy
         # cerebro.addstrategy(LightVolume)
-        cerebro.addstrategy(BambooVolume)
+        strategies = getobjects(args.strategies, bt.Strategy, bt.strategies)
+        for strat, kwargs in strategies:
+            cerebro.addstrategy(strat, **kwargs)
         
         cerebro.addanalyzer(bt.analyzers.SharpeRatio)
         cerebro.addanalyzer(bt.analyzers.Returns)
@@ -190,6 +193,31 @@ def parse_args():
     
     parser.add_argument('--notify', '-nt', action='store_true', default=False,
                         help='Whether to send notify message')
+    
+    parser.add_argument(
+        '--strategy', '-st', dest='strategies',
+        action='append', required=False,
+        metavar='module:name:kwargs',
+        help=('This option can be specified multiple times.\n'
+              '\n'
+              'The argument can be specified with the following form:\n'
+              '\n'
+              '  - module:classname:kwargs\n'
+              '\n'
+              '    Example: mymod:myclass:a=1,b=2\n'
+              '\n'
+              'kwargs is optional\n'
+              '\n'
+              'If module is omitted then class name will be sought in\n'
+              'the built-in strategies module. Such as in:\n'
+              '\n'
+              '  - :name:kwargs or :name\n'
+              '\n'
+              'If name is omitted, then the 1st strategy found in the mod\n'
+              'will be used. Such as in:\n'
+              '\n'
+              '  - module or module::kwargs')
+    )
 
     return parser.parse_args()
 
