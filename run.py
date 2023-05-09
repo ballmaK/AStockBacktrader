@@ -194,12 +194,12 @@ def run(pargs=''):
             pkwargs.update(ekwargs)
 
         # cerebro.plot(numfigs=args.plotfigs, style=args.plotstyle)
-        b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo())
+        # b = Bokeh(style='bar', plot_mode='single', scheme=Tradimo())
         # cerebro.plot(b)
-        # cerebro.plot(**pkwargs)
+        cerebro.plot(**pkwargs)
         # bo = Bokeh()
-        browser = OptBrowser(b, runsts)
-        browser.start()
+        # browser = OptBrowser(b, runsts)
+        # browser.start()
 
 
 def setbroker(args, cerebro):
