@@ -14,6 +14,7 @@ from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
 from message.bot import *
+from run import getobjects
 
 def run(code, args, fromdate, todate):
     try:
@@ -30,8 +31,10 @@ def run(code, args, fromdate, todate):
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
         
         # Add the strategy
-        cerebro.addstrategy(LightVolume)
-        cerebro.addstrategy(BambooVolume)
+        # cerebro.addstrategy(LightVolume)
+        strategies = getobjects(args.strategies, bt.Strategy, bt.strategies)
+        for strat, kwargs in strategies:
+            cerebro.addstrategy(strat, **kwargs)
         
         cerebro.addanalyzer(bt.analyzers.SharpeRatio)
         cerebro.addanalyzer(bt.analyzers.Returns)
@@ -64,7 +67,7 @@ def run(code, args, fromdate, todate):
                 last_order_type = strats[0].orders[-1]['side']
                 last_order_price = strats[0].orders[-1]['price']
                 last_order_price_now = strats[0].orders[-1]['price_now']
-                # print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
                 return ((exe_date),(code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
             # trade_df = DF.from_records(strats[0].orders)
@@ -96,7 +99,7 @@ def runstrategy():
     requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
     pool.wait()
-    print(results)
+    # print(results)
     # for code in codes:
     #     results.append(run(code, args, fromdate, todate))
     # else:
@@ -109,7 +112,7 @@ def runstrategy():
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)
-        base.insert_db(df, constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
+        base.insert_db(df.loc[df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
     else:
         message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
@@ -190,6 +193,31 @@ def parse_args():
     
     parser.add_argument('--notify', '-nt', action='store_true', default=False,
                         help='Whether to send notify message')
+    
+    parser.add_argument(
+        '--strategy', '-st', dest='strategies',
+        action='append', required=False,
+        metavar='module:name:kwargs',
+        help=('This option can be specified multiple times.\n'
+              '\n'
+              'The argument can be specified with the following form:\n'
+              '\n'
+              '  - module:classname:kwargs\n'
+              '\n'
+              '    Example: mymod:myclass:a=1,b=2\n'
+              '\n'
+              'kwargs is optional\n'
+              '\n'
+              'If module is omitted then class name will be sought in\n'
+              'the built-in strategies module. Such as in:\n'
+              '\n'
+              '  - :name:kwargs or :name\n'
+              '\n'
+              'If name is omitted, then the 1st strategy found in the mod\n'
+              'will be used. Such as in:\n'
+              '\n'
+              '  - module or module::kwargs')
+    )
 
     return parser.parse_args()
 
