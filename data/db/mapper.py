@@ -113,3 +113,12 @@ def select_trade_by_id(trade_id):
         print(e)
         return ''
     return df
+
+def select_industry_data_by_date(date):
+    sql = 'select * from %s where date="%s"' % (constants.STOCK_INDUSTRY_TABLE_NAME, date)
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        print(e)
+        return ''
+    return df

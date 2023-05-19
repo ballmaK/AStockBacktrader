@@ -1,4 +1,5 @@
 STOCK_BASE_TABLE_NAME = 'stock_base'
+STOCK_INDUSTRY_TABLE_NAME = 'stock_industry'
 STOCK_DAILY_TABLE_NAME = 'stock_daily'
 STOCK_DAILY_RESULT_TABLE_NAME = 'stock_daily_result'
 STOCK_TRADE_LOG_TABLE_NAME = 'stock_trade_log'

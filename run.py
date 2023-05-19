@@ -93,6 +93,11 @@ def run(pargs=''):
     if args.update_daily:
         update_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate)
         return
+    
+    # 更新行业数据
+    if args.update_industry:
+        update_stock_industry(stock=args.data[0])
+        return
         
     # 查询日线数据
     if args.query:
@@ -479,6 +484,11 @@ def parse_args(pargs=''):
         '--init-base', '-ib', action="store_true",
         required=False, default=False,              
         help='Init stock base data')
+    
+    group.add_argument(
+        '--update-industry', '-ui', action="store_true",
+        required=False, default=False,              
+        help='Update stock industry data')
     
     group.add_argument(
         '--query', '-qry', action="store_true",
