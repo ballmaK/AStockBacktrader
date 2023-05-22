@@ -120,5 +120,14 @@ def select_industry_data_by_date(date):
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         print(e)
-        return ''
+        return pd.DataFrame()
+    return df
+
+def select_industry_data_detail(date, industry_code):
+    sql = 'select * from %s where date="%s" and ind_code="%s"' % (constants.STOCK_INDUSTRY_DETAIL_TABLE_NAME, date, industry_code)
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        print(e)
+        return pd.DataFrame()
     return df
