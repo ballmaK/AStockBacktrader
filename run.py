@@ -107,6 +107,13 @@ def run(pargs=''):
         print(args.data)
         print(select_stock_daily(stock=args.data, fromdate=args.fromdate, todate=args.todate))
         return
+    
+    if args.query_trade:
+        pd.set_option('display.unicode.ambiguous_as_wide', True)
+        pd.set_option('display.unicode.east_asian_width', True)
+        pd.set_option('display.width', 180)   
+        print(select_stock_trade_by_date(fromdate=args.query_trade))
+        return
 
     cer_kwargs_str = args.cerebro
     cer_kwargs = eval('dict(' + cer_kwargs_str + ')')
@@ -494,6 +501,11 @@ def parse_args(pargs=''):
         '--query', '-qry', action="store_true",
         required=False, default=False,              
         help='Query stock daily data')
+    
+    group.add_argument(
+        '--query-trade', '-qt',
+        required=False, default=None,              
+        help='Query stock trade from sep date')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(

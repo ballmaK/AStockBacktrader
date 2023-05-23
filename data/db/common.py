@@ -76,6 +76,9 @@ def select_stock_daily(stock, fromdate, todate):
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
+def select_stock_trade_by_date(fromdate=None):
+    return mapper.select_stock_trade_by_date(fromdate)
+
 def select_random_stock(stock_num=10):
     stocks = mapper.select_all_code()
     stock_start = random.randint(0, len(stocks) - stock_num - 1)
