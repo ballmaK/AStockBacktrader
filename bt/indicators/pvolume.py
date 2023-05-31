@@ -107,7 +107,7 @@ class PVVP(Indicator):
         super(PVVP, self).__init__(data=self.data)
         
     def next(self):
-        sigb = (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0])
+        sigb = (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0]) and ((self.data.high[0] - self.data.low[0])/self.data.open[0] <= 9.9)
         # sigb = (self.lines.maxpp[0]/self.data.close[0] <= 0.15) and (self.pv.lines.minvolume[0] * self.vpr.lines.vpr[0] >= self.data.close[0]) and (self.mmvp.lines.minvp[0] >= self.data.close[0])
 
         sigs = self.data.close[0] >= (self.pv.lines.maxvolume[0] * self.vpr.lines.vpr[0] * self.p.sr) or (self.mmvp.lines.minvp[0] * self.p.rr <= self.lines.vsma[0])
