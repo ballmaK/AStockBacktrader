@@ -87,6 +87,16 @@ def select_data_between_date(code, start_date, end_date):
         return ''
     return df
 
+def select_stock_trade_by_date(fromdate):
+    sql = "select sdr.code as '名称', sdr.last_order_date as '买入时间', sdrs.last_order_date as '卖出时间', (sdrs.last_order_price-sdr.last_order_price)/sdr.last_order_price*100 as '收益' from stock_daily sd, stock_daily_result sdr, (select * from stock_daily_result where last_order_date > '%s' and last_order_type='SELL' and exe_date='%s') as sdrs where sd.code=sdr.code and sdrs.code=sdr.code and sdr.last_order_date > '%s' and sdr.last_order_type='BUY' and sdr.rnorm100 >= 20 and sd.date='%s' order by sdr.last_order_date asc" % (fromdate, get_lastest_trade_date(), fromdate, get_lastest_trade_date())
+    print(sql)
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        print(e)
+        return ''
+    return df
+
 def select_data_by_date(date):
     sql = 'select * from %s where date="%s" order by date' % (constants.STOCK_DAILY_TABLE_NAME, date)
     try:
@@ -112,4 +122,22 @@ def select_trade_by_id(trade_id):
     except Exception as e:
         print(e)
         return ''
+    return df
+
+def select_industry_data_by_date(date):
+    sql = 'select * from %s where date="%s"' % (constants.STOCK_INDUSTRY_TABLE_NAME, date)
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        print(e)
+        return pd.DataFrame()
+    return df
+
+def select_industry_data_detail(date, industry_code):
+    sql = 'select * from %s where date="%s" and ind_code="%s"' % (constants.STOCK_INDUSTRY_DETAIL_TABLE_NAME, date, industry_code)
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        print(e)
+        return pd.DataFrame()
     return df

@@ -52,6 +52,18 @@ def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
         requests = threadpool.makeRequests(__init_stock_daily, args)
         [pool.putRequest(req) for req in requests]
         pool.wait()
+        
+def update_stock_industry(stock=None):
+    if stock == 'all':
+        industry_df = __update_stock_industry()
+        q_size = len(industry_df.values.tolist())
+        pool = threadpool.ThreadPool(10, q_size=q_size, resq_size=q_size)
+        args = [([ind_data[1], ind_data[2]], {}) for ind_data in industry_df.values.tolist()]
+        requests = threadpool.makeRequests(__update_stock_industry_detail, args)
+        [pool.putRequest(req) for req in requests]
+        pool.wait()
+    else:
+        stocks = [stock]
 
 def select_all_stocks():
     return mapper.select_all_code()
@@ -63,6 +75,9 @@ def select_stock_daily(stock, fromdate, todate):
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+
+def select_stock_trade_by_date(fromdate=None):
+    return mapper.select_stock_trade_by_date(fromdate)
 
 def select_random_stock(stock_num=10):
     stocks = mapper.select_all_code()
@@ -117,5 +132,69 @@ def __init_stock_daily(stock, start_date, end_date, adjust):
         traceback.print_exc(e)
         print('error', stock, e)
         
+def __update_stock_industry():
+    try:
+        today = datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        industry_df = mapper.select_industry_data_by_date(today)
+        if not industry_df.empty:
+            print(f'** 股票行业数据 {today} 已更新**')
+            return industry_df
+        print(f'** 更新股票行业数据 {today} **')
+        stock_board_industry_name_em_df = ak.stock_board_industry_name_em()
+        stock_board_industry_name_em_df['date'] = today
+        stock_board_industry_name_em_df.rename(columns={'排名': 'range'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'板块名称': 'ind_name'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'板块代码': 'ind_code'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'最新价': 'lastest'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'涨跌额': 'inc'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'涨跌幅': 'inc_rate'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'总市值': 'total'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'换手率': 'turnover'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'上涨家数': 'rise'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'下跌家数': 'fall'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'领涨股票': 'leading_stock'}, inplace=True)
+        stock_board_industry_name_em_df.rename(columns={'领涨股票-涨跌幅': 'leading_stock_inc'}, inplace=True)
+        stock_board_industry_name_em_df.set_index('range', inplace=True)
+        base.insert_db(stock_board_industry_name_em_df, constants.STOCK_INDUSTRY_TABLE_NAME, True, "`date`,`range`,`ind_code`")
+        return stock_board_industry_name_em_df
+    except Exception as e:
+        traceback.print_exc(e)
+        print('update industry error', e)
+        
+def __update_stock_industry_detail(industry_name, indusctry_code):
+    try:
+        today = datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        industry_df = mapper.select_industry_data_detail(indusctry_code, today)
+        if not industry_df.empty:
+            print(f'** 股票行业明细数据 {today} 已更新**')
+            return
+        print(f'** 更新股票行业明细数据 {today} **')
+        stock_board_industry_cons_em_df = ak.stock_board_industry_cons_em(symbol=industry_name)
+        stock_board_industry_cons_em_df['ind_name'] = industry_name
+        stock_board_industry_cons_em_df['ind_code'] = indusctry_code
+        stock_board_industry_cons_em_df.rename(columns={'代码': 'symbol'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'名称': 'symbol_name'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'最新价': 'price_now'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'涨跌幅': 'inc_rate'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'涨跌额': 'inc'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'成交量': 'volume'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'成交额': 'money'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'振幅': 'amplitude'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'最高': 'high'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'最低': 'low'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'今开': 'open'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'昨收': 'close'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'换手率': 'turnover'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'市盈率-动态': 'PE'}, inplace=True)
+        stock_board_industry_cons_em_df.rename(columns={'市净率': 'PB'}, inplace=True)
+        stock_board_industry_cons_em_df['序号'] = today
+        stock_board_industry_cons_em_df.rename(columns={'序号': 'date'}, inplace=True)
+        stock_board_industry_cons_em_df.set_index('symbol', inplace=True)
+        base.insert_db(stock_board_industry_cons_em_df, constants.STOCK_INDUSTRY_DETAIL_TABLE_NAME, True, "`date`,`symbol`,`ind_code`")
+    except Exception as e:
+        traceback.print_exc(e)
+        print('update stock industry detail error', e)
+        
 if __name__ == '__main__':
-    update_stock_daily()
+    # update_stock_daily()
+    __update_stock_industry()
