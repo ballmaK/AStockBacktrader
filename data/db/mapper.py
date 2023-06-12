@@ -88,8 +88,8 @@ def select_data_between_date(code, start_date, end_date):
     return df
 
 def select_stock_trade_by_date(fromdate):
-    sql = "select sdr.code as '名称', sdr.last_order_date as '买入时间', sdrs.last_order_date as '卖出时间', (sdrs.last_order_price-sdr.last_order_price)/sdr.last_order_price*100 as '收益' from stock_daily sd, stock_daily_result sdr, (select * from stock_daily_result where last_order_date > '%s' and last_order_type='SELL' and exe_date='%s') as sdrs where sd.code=sdr.code and sdrs.code=sdr.code and sdr.last_order_date > '%s' and sdr.last_order_type='BUY' and sdr.rnorm100 >= 20 and sd.date='%s' order by sdr.last_order_date asc" % (fromdate, get_lastest_trade_date(), fromdate, get_lastest_trade_date())
-    print(sql)
+    sql = "SELECT buy.exe_date AS buy_date, buy.code, sb.name, format(sid.money/sid.turnover, 2) + 'E' as 'FMV', sid.PE, sid.PB, sid.ind_name, IFNULL(sell.exe_date, '--') AS sell_date, buy.last_order_price AS buy_price, IFNULL(sell.last_order_price, '--') AS sell_price, sd.close AS now_price, IF(ISNULL(sell.last_order_price), FORMAT((sd.close - buy.last_order_price) / buy.last_order_price * 100, 2), FORMAT((sell.last_order_price - buy.last_order_price) / buy.last_order_price * 100, 2)) AS profit FROM stock_daily_result AS buy LEFT JOIN stock_daily_result AS sell ON buy.code = sell.code AND buy.exe_date < sell.exe_date AND sell.last_order_type = 'SELL' LEFT JOIN stock_daily sd ON buy.code = sd.code LEFT JOIN stock_base sb ON buy.code = sb.code LEFT JOIN stock_industry_detail sid ON sb.symbol = sid.symbol WHERE buy.last_order_type = 'BUY' AND buy.exe_date > '%s' AND buy.rnorm100 > 20 AND sd.date = '%s'" % (fromdate, get_lastest_trade_date())
+    # print(sql)
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
