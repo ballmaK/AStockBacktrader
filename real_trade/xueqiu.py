@@ -7,12 +7,6 @@ LOGON_COOKIE = os.environ.get('LOGON_COOKIE') if (os.environ.get('LOGON_COOKIE')
 
 user = easytrader.use('xq')
 
-context = {
-  "cookies": LOGON_COOKIE,
-  "portfolio_code": "ZH3239610",
-  "portfolio_market": "cn"
-}
-
 if __name__ == '__main__':
-    user.prepare(config_file=None, **context)
+    user.prepare("xq_config.json")
     print(user.position)
