@@ -36,6 +36,7 @@ import backtrader as bt
 from data.db import *
 from bt.feeds import *
 from utils import btret as br
+from real_trade import xueqiu
 
 DATAFORMATS = dict(
     btcsv=bt.feeds.BacktraderCSVData,
@@ -112,7 +113,16 @@ def run(pargs=''):
         pd.set_option('display.unicode.ambiguous_as_wide', True)
         pd.set_option('display.unicode.east_asian_width', True)
         pd.set_option('display.width', 180)   
-        print(select_stock_trade_by_date(fromdate=args.query_trade))
+        df = select_stock_trade_by_date(fromdate=args.query_trade)
+        print(df)
+        if args.adjust_weight:
+            user = xueqiu.load_user()
+            for i in df.itertuples():
+                symbol = i.code.upper()
+                if i.sell_date != '--':
+                    xueqiu.adjust_weight(symbol, 0, user)
+                else:
+                    xueqiu.adjust_weight(symbol, 2, user)
         return
 
     cer_kwargs_str = args.cerebro
@@ -506,6 +516,9 @@ def parse_args(pargs=''):
         '--query-trade', '-qt',
         required=False, default=None,              
         help='Query stock trade from sep date')
+    
+    parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
+                        help='Adjust stock weight on xueqiu')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(
