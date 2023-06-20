@@ -88,7 +88,52 @@ def select_data_between_date(code, start_date, end_date):
     return df
 
 def select_stock_trade_by_date(fromdate):
-    sql = "SELECT buy.exe_date AS buy_date, buy.code, sb.name, format(sid.money/sid.turnover, 2) + 'E' as 'FMV', sid.PE, sid.PB, sid.ind_name, IFNULL(sell.exe_date, '--') AS sell_date, buy.last_order_price AS buy_price, IFNULL(sell.last_order_price, '--') AS sell_price, sd.close AS now_price, IF(ISNULL(sell.last_order_price), FORMAT((sd.close - buy.last_order_price) / buy.last_order_price * 100, 2), FORMAT((sell.last_order_price - buy.last_order_price) / buy.last_order_price * 100, 2)) AS profit FROM stock_daily_result AS buy LEFT JOIN stock_daily_result AS sell ON buy.code = sell.code AND buy.exe_date < sell.exe_date AND sell.last_order_type = 'SELL' LEFT JOIN stock_daily sd ON buy.code = sd.code LEFT JOIN stock_base sb ON buy.code = sb.code LEFT JOIN stock_industry_detail sid ON sb.symbol = sid.symbol WHERE buy.last_order_type = 'BUY' AND buy.exe_date > '%s' AND buy.rnorm100 > 20 AND sd.date = '%s'" % (fromdate, get_lastest_trade_date())
+    sql = "SELECT \
+            buy.exe_date AS buy_date, \
+            buy.code, \
+            sb.name, \
+            FORMAT(sid.money / sid.turnover, 2) + 'E' AS 'FMV', \
+            sid.PE,\
+            sid.PB,\
+            sid.ind_name,\
+            IFNULL(sell.exe_date, '--') AS sell_date,\
+            buy.last_order_price AS buy_price,\
+            IFNULL(sell.last_order_price, '--') AS sell_price,\
+            sd.close AS now_price,\
+            IF(ISNULL(sell.last_order_price),\
+                FORMAT((sd.close - buy.last_order_price) / buy.last_order_price * 100,\
+                    2),\
+                FORMAT((sell.last_order_price - buy.last_order_price) / buy.last_order_price * 100,\
+                    2)) AS profit\
+        FROM\
+            stock_daily_result AS buy\
+                LEFT JOIN\
+            stock_daily_result AS sell ON buy.code = sell.code\
+                AND buy.exe_date < sell.exe_date\
+                AND sell.last_order_type = 'SELL'\
+                LEFT JOIN\
+            stock_daily sd ON buy.code = sd.code\
+                LEFT JOIN\
+            stock_base sb ON buy.code = sb.code\
+                LEFT JOIN\
+            (SELECT \
+                *\
+            FROM\
+                stock_industry_detail\
+            WHERE\
+                date = (SELECT \
+                        date\
+                    FROM\
+                        stock_data.stock_industry_detail\
+                    GROUP BY date\
+                    ORDER BY date DESC\
+                    LIMIT 1)) sid ON sb.symbol = sid.symbol\
+        WHERE\
+            buy.last_order_type = 'BUY'\
+                AND buy.exe_date > '%s'\
+                AND buy.rnorm100 > 20\
+                AND sd.date = '%s'\
+                AND sid.PE > 0" % (fromdate, get_lastest_trade_date())
     # print(sql)
     try:
         df = pd.read_sql(sql=sql, con=base.engine())

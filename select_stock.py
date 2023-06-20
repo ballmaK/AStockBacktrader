@@ -15,6 +15,7 @@ from utils.datautils import df_convert
 from utils.timeutils import *
 from message.bot import *
 from run import getobjects
+from real_trade import xueqiu
 
 def run(code, args, fromdate, todate):
     try:
@@ -112,7 +113,10 @@ def runstrategy():
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)
-        base.insert_db(df.loc[df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
+        if args.persistence:
+            base.insert_db(df.loc[df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`") 
+        else:
+            print(df)  
     else:
         message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
@@ -132,6 +136,7 @@ def send_message(bot, df, args):
     for row in buy_df.itertuples(index=False):
         msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
         buy_message = buy_message + msg_row
+        
     else:
         if buy_df.empty:
             message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】买入无推荐</font>')
@@ -140,6 +145,10 @@ def send_message(bot, df, args):
         else:
             message = QYWXMessageMD(buy_message)
             bot.send_message(message)
+            if args.adjust_weight:
+                xueqiu.adjust_weight(row.code, 2)
+            else:
+                print(f'Adjust stock {row.code} weight to {2}%')
         
     for row in sell_df.itertuples(index=False):
         msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
@@ -152,6 +161,10 @@ def send_message(bot, df, args):
         else:
             message = QYWXMessageMD(sell_message)
             bot.send_message(message)
+            if args.adjust_weight:
+                xueqiu.adjust_weight(row.code, 0)
+            else:
+                print(f'Adjust stock {row.code} weight to {0}%')
     
     
     
@@ -193,6 +206,11 @@ def parse_args():
     
     parser.add_argument('--notify', '-nt', action='store_true', default=False,
                         help='Whether to send notify message')
+    
+    parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
+                        help='Adjust stock weight on xueqiu')
+    
+    parser.add_argument('--persistence', action='store_true', default=False)
     
     parser.add_argument(
         '--strategy', '-st', dest='strategies',
