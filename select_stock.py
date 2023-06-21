@@ -15,7 +15,6 @@ from utils.datautils import df_convert
 from utils.timeutils import *
 from message.bot import *
 from run import getobjects
-from real_trade import xueqiu
 
 def run(code, args, fromdate, todate):
     try:
@@ -145,10 +144,6 @@ def send_message(bot, df, args):
         else:
             message = QYWXMessageMD(buy_message)
             bot.send_message(message)
-            if args.adjust_weight:
-                xueqiu.adjust_weight(row.code, 2)
-            else:
-                print(f'Adjust stock {row.code} weight to {2}%')
         
     for row in sell_df.itertuples(index=False):
         msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
@@ -161,13 +156,6 @@ def send_message(bot, df, args):
         else:
             message = QYWXMessageMD(sell_message)
             bot.send_message(message)
-            if args.adjust_weight:
-                xueqiu.adjust_weight(row.code, 0)
-            else:
-                print(f'Adjust stock {row.code} weight to {0}%')
-    
-    
-    
 
 
 def parse_args():

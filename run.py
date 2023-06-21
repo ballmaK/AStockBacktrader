@@ -113,16 +113,11 @@ def run(pargs=''):
         pd.set_option('display.unicode.ambiguous_as_wide', True)
         pd.set_option('display.unicode.east_asian_width', True)
         pd.set_option('display.width', 180)   
-        df = select_stock_trade_by_date(fromdate=args.query_trade)
-        print(df)
+        trade_df = select_stock_trade_by_date(fromdate=args.query_trade)
+        print(trade_df)
         if args.adjust_weight:
             user = xueqiu.load_user()
-            for i in df.itertuples():
-                symbol = i.code.upper()
-                if i.sell_date != '--':
-                    xueqiu.adjust_weight(symbol, 0, user)
-                else:
-                    xueqiu.adjust_weight(symbol, 2, user)
+            xueqiu.adjust_weight(trade_df, user)
         return
 
     cer_kwargs_str = args.cerebro
