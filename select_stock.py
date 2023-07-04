@@ -13,6 +13,7 @@ from bt.strategies.lightvolume import LightVolume
 from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
+from utils.log import logger
 from message.bot import *
 from run import getobjects
 
@@ -67,13 +68,13 @@ def run(code, args, fromdate, todate):
                 last_order_type = strats[0].orders[-1]['side']
                 last_order_price = strats[0].orders[-1]['price']
                 last_order_price_now = strats[0].orders[-1]['price_now']
-                print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                logger.info(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
                 return ((exe_date),(code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
             # trade_df = DF.from_records(strats[0].orders)
             # print(trade_df)
     except Exception as e:
-        print(f'{code} select error')
+        logger.error(f'{code} select error')
         
 def handle_results(request, result):
     if result:

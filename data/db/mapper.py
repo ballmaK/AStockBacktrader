@@ -2,13 +2,14 @@ import pandas as pd
 
 from . import base
 from . import constants
+from utils.log import logger
 
 def getOneDayTradeData(date):
     sql = "select * from %s where date='%s' order by date desc" % (constants.STOCK_DAILY_TABLE_NAME ,date)
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -21,7 +22,7 @@ def getTradeDates(start_date, end_date):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df['date'].to_list()
     
@@ -30,7 +31,7 @@ def getMaxTradeDateNDaysBefore(n):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df['date'].to_list()[n]
 
@@ -39,7 +40,7 @@ def get_lastest_trade_date():
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df['date'].to_list()[0]
 
@@ -48,7 +49,7 @@ def select_all_code():
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df['code'].to_list()
 
@@ -60,7 +61,7 @@ def select_data_by_code(code, limit):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -73,7 +74,7 @@ def select_data(code, date, limit):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -83,7 +84,7 @@ def select_data_between_date(code, start_date, end_date):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -138,7 +139,7 @@ def select_stock_trade_by_date(fromdate):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -147,7 +148,7 @@ def select_data_by_date(date):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -156,7 +157,7 @@ def select_stock_data_by_date(code, date):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -165,7 +166,7 @@ def select_trade_by_id(trade_id):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return ''
     return df
 
@@ -174,7 +175,7 @@ def select_industry_data_by_date(date):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return pd.DataFrame()
     return df
 
@@ -183,6 +184,6 @@ def select_industry_data_detail(date, industry_code):
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
-        print(e)
+        logger.error(e)
         return pd.DataFrame()
     return df
