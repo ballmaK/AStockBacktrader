@@ -110,36 +110,38 @@ def runstrategy():
     df['last_order_date'] = df['last_order_date'].map(timeutils.reformat_date)
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    exe_date = common.get_lastest_trade_date()
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)
         if args.persistence:
-            base.insert_db(df.loc[df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`") 
+            base.insert_db(df.loc[df['last_order_date'] == exe_date], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`") 
         else:
             print(df)  
     else:
-        message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
+        message_str = str.format(f'<font color="warning">【{exe_date}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
         bot.send_message(message, df, args)     
     
 def send_message(bot, df, args):
+    exe_date = common.get_lastest_trade_date()
     if not args.notify:
         return
-    buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
-    sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
+    buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == exe_date), ['code', 'rnorm100','last_order_date','last_order_type']]
+    sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == exe_date), ['code', 'rnorm100','last_order_date','last_order_type']]
     # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
     buy_message = str.format(
-        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入</font>\n')
+        f'<font color="warning">【{exe_date}】推荐买入</font>\n')
     
     sell_message = str.format(
-        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐卖出</font>\n')
+        f'<font color="warning">【{exe_date}】推荐卖出</font>\n')
     for row in buy_df.itertuples(index=False):
         msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
         buy_message = buy_message + msg_row
         
     else:
         if buy_df.empty:
-            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】买入无推荐</font>')
+            message_str = str.format(f'<font color="warning">【{exe_date}】买入无推荐</font>')
             message = QYWXMessageMD(message_str)
             bot.send_message(message)
         else:
@@ -151,7 +153,7 @@ def send_message(bot, df, args):
         sell_message = sell_message + msg_row
     else:
         if sell_df.empty:
-            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】卖出无推荐</font>')
+            message_str = str.format(f'<font color="warning">【{exe_date}】卖出无推荐</font>')
             message = QYWXMessageMD(message_str)
             bot.send_message(message)
         else:
