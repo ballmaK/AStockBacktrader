@@ -75,13 +75,25 @@ def select_all_stocks():
     return mapper.select_all_code()
 
 @cache
-def select_stock_daily(stock, fromdate, todate):
+def select_stock_daily(stock, fromdate, todate, prepared=False):
     code = stock
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
-    return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+    if prepared:
+        return prepare_stock_data(fromdate, todate).groupby('code').filter(lambda x: x['code'] == stock)
+    else:
+        return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+
+@cache
+def prepare_stock_data(fromdate, todate):
+    logger.info(f"PREPARE DATA {fromdate}-{todate}")
+    fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
+    end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
+    return mapper.prepare_stock_data(start_date=start_date, end_date=end_date)
 
 def select_stock_trade_by_date(fromdate=None):
     return mapper.select_stock_trade_by_date(fromdate)

@@ -106,7 +106,8 @@ def run(pargs=''):
             print(f'** 开始/结束日期未给定')
             return
         print(args.data)
-        print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate))
+        common.prepare_stock_data(args.fromdate, args.todate)
+        print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate), prepared=True)
         return
     
     if args.query_trade:

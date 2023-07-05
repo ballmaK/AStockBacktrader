@@ -14,6 +14,7 @@ from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
 from utils.log import logger
+from functools import cache
 from message.bot import *
 from run import getobjects
 
@@ -27,8 +28,7 @@ def run(code, args, fromdate, todate):
         cerebro = bt.Cerebro()
 
         # Get the dates from the args
-        
-        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), prepared=True)
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
         
         # Add the strategy
@@ -91,6 +91,7 @@ def runstrategy():
     else:
         todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
     if args.stock_num == 'all':
+        common.prepare_stock_data(fromdate, todate)
         codes = common.select_all_stocks()
     else:
         codes = common.select_random_stock(int(args.stock_num))
