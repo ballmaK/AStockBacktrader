@@ -5,6 +5,7 @@ import random
 import akshare as ak
 import traceback
 import pandas as pd
+import ttl_cache
 
 # sys.path.append("../..")
 from functools import cache
@@ -75,7 +76,7 @@ def update_stock_industry(stock=None):
 def select_all_stocks():
     return mapper.select_all_code()
 
-@cache
+@ttl_cache
 def select_stock_daily(stock, fromdate, todate, prepared=False):
     code = stock
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
@@ -87,7 +88,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
-@cache
+@ttl_cache(60 * 20)
 def prepare_stock_data(fromdate, todate):
     logger.info(f"PREPARE DATA {fromdate}-{todate}")
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
