@@ -91,7 +91,7 @@ def runstrategy():
     else:
         todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
     if args.stock_num == 'all':
-        common.prepare_stock_data(fromdate, todate)
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_all_stocks()
     else:
         codes = common.select_random_stock(int(args.stock_num))
