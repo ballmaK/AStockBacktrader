@@ -19,7 +19,6 @@ def adjust_weight(trade_df=None, user=None):
     user_balance = user.balance
     position_df = pd.DataFrame(user_position)
     print("持仓数据: ")
-    logger.log("持仓数据: ")
     print(position_df)
     balance_df = pd.DataFrame(user_balance)
     print("余额数据: ")
