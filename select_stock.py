@@ -28,9 +28,11 @@ def run(code, args, fromdate, todate):
         cerebro = bt.Cerebro()
 
         # Get the dates from the args
+        logger.info(f'{code} Start get data')
         data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), prepared=True)
+        logger.info(f'{code} Success get data')
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
-        
+        logger.info(f'{code} Loading data')
         # Add the strategy
         # cerebro.addstrategy(LightVolume)
         strategies = getobjects(args.strategies, bt.Strategy, bt.strategies)
@@ -54,7 +56,9 @@ def run(code, args, fromdate, todate):
         # ret = cerebro.run(runonce=not args.runnext,
         #             preload=not args.nopreload,
         #             oldsync=args.oldsync)
+        logger.info(f'{code} Run start')
         ret = cerebro.run()
+        logger.info(f'{code} Run end')
         if ret:
             strats = [ strat for i, strat in enumerate(ret)]
             # print('Sharpe Ratio:', strats[0].analyzers.sharperatio.get_analysis())
