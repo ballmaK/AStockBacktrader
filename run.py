@@ -105,9 +105,8 @@ def run(pargs=''):
         if not args.fromdate or not args.todate:
             print(f'** 开始/结束日期未给定')
             return
-        print(args.data)
         common.prepare_stock_data(args.fromdate, args.todate)
-        print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate), prepared=True)
+        print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate, prepared=True))
         return
     
     if args.query_trade:

@@ -4,6 +4,7 @@
 import random
 import akshare as ak
 import traceback
+import pandas as pd
 
 # sys.path.append("../..")
 from functools import cache
@@ -82,7 +83,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     if prepared:
-        return prepare_stock_data(fromdate, todate).groupby('code').filter(lambda x: x['code'] == stock)
+        return prepare_stock_data(fromdate, todate).groupby('code').filter(lambda x: (x['code'] == stock).any())
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
@@ -91,9 +92,40 @@ def prepare_stock_data(fromdate, todate):
     logger.info(f"PREPARE DATA {fromdate}-{todate}")
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
-    start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
-    end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
-    return mapper.prepare_stock_data(start_date=start_date, end_date=end_date)
+    # return
+    fd = fromdatetime
+    day_step = 30
+    td = timeutils.get_nextN_day(fromdatetime, day_step)
+    data_df = pd.DataFrame()
+    data = []
+    ft_date_list = [(fd.strftime(timeutils.DATE_FORMAT_TO_DAY), td.strftime(timeutils.DATE_FORMAT_TO_DAY))]
+    if timeutils.get_nextN_day(fromdatetime, day_step) > todatetime:
+        td = todatetime
+        ft_date_list = [(fd.strftime(timeutils.DATE_FORMAT_TO_DAY), td.strftime(timeutils.DATE_FORMAT_TO_DAY))]
+    else:
+        while td < todatetime:
+            fd = timeutils.get_next_day(td)
+            td = timeutils.get_nextN_day(fd, day_step)
+            if td > todatetime:
+                td = todatetime
+            start_date = fd.strftime(timeutils.DATE_FORMAT_TO_DAY)
+            end_date = td.strftime(timeutils.DATE_FORMAT_TO_DAY)
+            ft_date_list.append((start_date, end_date))
+    # return mapper.prepare_stock_data(start_date=start_date, end_date=end_date)
+    # print(ft_date_list)
+    results = []
+    pool = threadpool.ThreadPool(20, q_size=len(ft_date_list), resq_size=len(ft_date_list))
+    req_args = [([fromdate, todate], {}) for (fromdate, todate) in ft_date_list]
+    requests = threadpool.makeRequests(mapper.prepare_stock_data, req_args, callback=lambda x,y: results.append(y))
+    [pool.putRequest(req) for req in requests]
+    pool.wait()
+    for result in results:
+        data_df = pd.concat([data_df, result])
+    return data_df
+
+def concat_df(target_df, source_df):
+    print(source_df, target_df)
+    source_df = pd.concat([source_df, target_df])
 
 def select_stock_trade_by_date(fromdate=None):
     return mapper.select_stock_trade_by_date(fromdate)
