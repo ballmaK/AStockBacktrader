@@ -82,7 +82,8 @@ def handle_results(request, result):
 
 def runstrategy():
     args = parse_args()
-    
+    exe_date = common.get_lastest_trade_date()
+    logger.info(f'RUN STRATEGY {exe_date}')
     fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
     if not args.todate:
         todate  = common.get_lastest_trade_date().replace('-', '')
@@ -110,7 +111,7 @@ def runstrategy():
     df['last_order_date'] = df['last_order_date'].map(timeutils.reformat_date)
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
-    exe_date = common.get_lastest_trade_date()
+    
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)

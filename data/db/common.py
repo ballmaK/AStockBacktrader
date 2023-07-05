@@ -6,6 +6,7 @@ import akshare as ak
 import traceback
 
 # sys.path.append("../..")
+from functools import cache
 import utils.timeutils as timeutils
 import utils.threadpool as threadpool
 
@@ -73,6 +74,7 @@ def update_stock_industry(stock=None):
 def select_all_stocks():
     return mapper.select_all_code()
 
+@cache
 def select_stock_daily(stock, fromdate, todate):
     code = stock
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
