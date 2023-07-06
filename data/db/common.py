@@ -95,7 +95,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
 def prepare_stock_data(fromdate, todate):
     global data_cache
     if data_cache:
-        logger.info('FETCHING DATA BY CACHE')
+        logger.info(f'FETCHING DATA BY CACHE {data_cache.shape}')
         return data_cache
     logger.info(f"PREPARE DATA {fromdate}-{todate}")
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
