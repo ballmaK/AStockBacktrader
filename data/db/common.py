@@ -88,7 +88,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
-@ttl_cache(60 * 20)
+@ttl_cache(60 * 60 * 2)
 def prepare_stock_data(fromdate, todate):
     logger.info(f"PREPARE DATA {fromdate}-{todate}")
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
