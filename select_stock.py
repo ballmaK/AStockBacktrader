@@ -101,7 +101,7 @@ def runstrategy():
         codes = common.select_random_stock(int(args.stock_num))
 
     results = []
-    pool = threadpool.ThreadPool(20, q_size=len(codes), resq_size=len(codes))
+    pool = threadpool.ThreadPool(10, q_size=len(codes), resq_size=len(codes))
     req_args = [([stock, args, fromdate, todate], {}) for stock in codes]
     requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]

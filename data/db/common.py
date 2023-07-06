@@ -86,9 +86,10 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     if prepared:
-        prepared_data = data_cache
+        prepared_data = data_cache[stock]
         logger.info(f'DATA PREPARED {prepared_data.shape}' )
-        return prepared_data.groupby('code').filter(lambda x: (x['code'] == stock).any())
+        return prepared_data
+        # return prepared_data.groupby('code').filter(lambda x: (x['code'] == stock).any())
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
@@ -131,7 +132,7 @@ def prepare_stock_data(fromdate, todate):
     for result in results:
         data_df = pd.concat([data_df, result])
     logger.info(f"PREPARE DATA {fromdate}-{todate} Done {data_df.shape}")
-    data_cache = data_df
+    data_cache = data_df.groupby('code')
     return data_df
 
 def concat_df(target_df, source_df):
