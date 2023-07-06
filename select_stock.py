@@ -125,7 +125,7 @@ def runstrategy():
         if args.persistence:
             base.insert_db(df.loc[df['last_order_date'] == exe_date], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`") 
         else:
-            print(df)  
+            print(df.loc[df['last_order_date'] == exe_date])  
     else:
         message_str = str.format(f'<font color="warning">【{exe_date}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
