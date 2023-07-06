@@ -128,7 +128,7 @@ def prepare_stock_data(fromdate, todate):
     pool.wait()
     for result in results:
         data_df = pd.concat([data_df, result])
-    logger.info(f"PREPARE DATA {fromdate}-{todate} Done")
+    logger.info(f"PREPARE DATA {fromdate}-{todate} Done {data_df.shape}")
     data_cache = data_df
     return data_df
 
