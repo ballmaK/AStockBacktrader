@@ -21,7 +21,8 @@ from run import getobjects
 def run(code, args, fromdate, todate):
     try:
         # filter bj market
-        exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        # exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        exe_date = datetime.datetime.strftime(todate, '%Y%m%d').strftime(DATE_FORMAT_TO_DAY)
         if 'bj' in code or 'sh688' in code:
             return
         # Create a cerebro
@@ -85,9 +86,7 @@ def handle_results(request, result):
         return result
 
 def runstrategy():
-    args = parse_args()
-    exe_date = common.get_lastest_trade_date()
-    logger.info(f'RUN STRATEGY {exe_date}')
+    args = parse_args()    
     fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
     if not args.todate:
         todate  = common.get_lastest_trade_date().replace('-', '')
@@ -118,6 +117,8 @@ def runstrategy():
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
     
+    exe_date = datetime.datetime.strftime(todate, '%Y%m%d').strftime(DATE_FORMAT_TO_DAY)
+    logger.info(f'RUN STRATEGY {exe_date}')
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)
