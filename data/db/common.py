@@ -5,7 +5,7 @@ import random
 import akshare as ak
 import traceback
 import pandas as pd
-import ttl_cache
+# import ttl_cache
 
 # sys.path.append("../..")
 from functools import cache
@@ -92,6 +92,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
 
 # @ttl_cache(60 * 60 * 2)
 def prepare_stock_data(fromdate, todate):
+    global data_cache
     if data_cache:
         logger.info('FETCHING DATA BY CACHE')
         return data_cache
