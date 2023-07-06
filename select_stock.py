@@ -117,7 +117,7 @@ def runstrategy():
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
     
-    exe_date = datetime.datetime.strftime(todate, '%Y%m%d').strptime(DATE_FORMAT_TO_DAY)
+    exe_date = todate.strptime(DATE_FORMAT_TO_DAY)
     logger.info(f'RUN STRATEGY {exe_date}')
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
