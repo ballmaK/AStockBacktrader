@@ -87,7 +87,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     if prepared:
         prepared_data = data_cache.get_group(stock)
-        logger.info(f'DATA PREPARED {prepared_data.shape}' )
+        # logger.info(f'DATA PREPARED {prepared_data.shape}' )
         return prepared_data
         # return prepared_data.groupby('code').filter(lambda x: (x['code'] == stock).any())
     else:
