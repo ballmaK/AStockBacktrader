@@ -18,6 +18,8 @@ from . import mapper
 from . import constants
 from utils.log import logger
 
+data_cache = None
+
 def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
     if stock == 'all':
         stocks = select_all_stocks()
@@ -76,7 +78,7 @@ def update_stock_industry(stock=None):
 def select_all_stocks():
     return mapper.select_all_code()
 
-@ttl_cache
+# @ttl_cache
 def select_stock_daily(stock, fromdate, todate, prepared=False):
     code = stock
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
@@ -88,8 +90,11 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
 
-@ttl_cache(60 * 60 * 2)
+# @ttl_cache(60 * 60 * 2)
 def prepare_stock_data(fromdate, todate):
+    if data_cache:
+        logger.info('FETCHING DATA BY CACHE')
+        return data_cache
     logger.info(f"PREPARE DATA {fromdate}-{todate}")
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
@@ -122,6 +127,8 @@ def prepare_stock_data(fromdate, todate):
     pool.wait()
     for result in results:
         data_df = pd.concat([data_df, result])
+    logger.info(f"PREPARE DATA {fromdate}-{todate} Done")
+    data_cache = data_df
     return data_df
 
 def concat_df(target_df, source_df):
