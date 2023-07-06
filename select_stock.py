@@ -98,6 +98,7 @@ def runstrategy():
         common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_all_stocks()
     else:
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_random_stock(int(args.stock_num))
 
     results = []
