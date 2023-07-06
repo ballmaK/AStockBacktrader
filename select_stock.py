@@ -22,7 +22,7 @@ def run(code, args, fromdate, todate):
     try:
         # filter bj market
         # exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
-        exe_date = datetime.datetime.strptime(todate, '%Y%m%d').strftime(DATE_FORMAT_TO_DAY)
+        exe_date = todate.strftime(DATE_FORMAT_TO_DAY)
         if 'bj' in code or 'sh688' in code:
             return
         # Create a cerebro
