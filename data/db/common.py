@@ -86,6 +86,7 @@ def select_stock_daily(stock, fromdate, todate, prepared=False):
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     if prepared:
+        logger.info("DATA PREPARED")
         return prepare_stock_data(fromdate, todate).groupby('code').filter(lambda x: (x['code'] == stock).any())
     else:
         return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
