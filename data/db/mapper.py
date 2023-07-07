@@ -89,13 +89,14 @@ def select_data_between_date(code, start_date, end_date):
     return df
 
 def prepare_stock_data(start_date, end_date):
-    sql = "select * from %s where date >= '%s' and date <= '%s'" % (constants.STOCK_DAILY_TABLE_NAME, start_date, end_date)
-    # print(sql)
+    sql = "select * from %s where code='sh600530' and date >= '%s' and date <= '%s'" % (constants.STOCK_DAILY_TABLE_NAME, start_date, end_date)
+    # print(sql+'\n')
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
     except Exception as e:
         logger.error(e)
         return ''
+    # print(df)
     return df
 
 def select_stock_trade_by_date(fromdate):

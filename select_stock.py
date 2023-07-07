@@ -96,6 +96,9 @@ def runstrategy():
     if args.stock_num == 'all':
         common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_all_stocks()
+    elif args.stock_num == '1':
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        codes = [args.stock]
     else:
         common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_random_stock(int(args.stock_num))
@@ -187,6 +190,8 @@ def parse_args():
     
     parser.add_argument('--stock-num', default='10',
                         help='Stock pool number')
+    
+    parser.add_argument('--stock', help='Stock code')
 
     parser.add_argument('--runnext', action='store_true',
                         help='Use next by next instead of runonce')
