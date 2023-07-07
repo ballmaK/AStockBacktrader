@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import argparse
 import datetime
+import traceback
 import pandas as pd
 import backtrader as bt
 from pandas import DataFrame as DF
@@ -79,6 +80,7 @@ def run(code, args, fromdate, todate):
             # trade_df = DF.from_records(strats[0].orders)
             # print(trade_df)
     except Exception as e:
+        traceback.print_exc(e)
         logger.error(f'{code} select error')
         
 def handle_results(request, result):
