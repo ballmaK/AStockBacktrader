@@ -36,6 +36,7 @@ import backtrader as bt
 from data.db import *
 from bt.feeds import *
 from utils import btret as br
+from real_trade import xueqiu
 
 DATAFORMATS = dict(
     btcsv=bt.feeds.BacktraderCSVData,
@@ -104,15 +105,19 @@ def run(pargs=''):
         if not args.fromdate or not args.todate:
             print(f'** 开始/结束日期未给定')
             return
-        print(args.data)
-        print(select_stock_daily(stock=args.data, fromdate=args.fromdate, todate=args.todate))
+        common.prepare_stock_data(args.fromdate, args.todate)
+        print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate, prepared=True))
         return
     
     if args.query_trade:
         pd.set_option('display.unicode.ambiguous_as_wide', True)
         pd.set_option('display.unicode.east_asian_width', True)
         pd.set_option('display.width', 180)   
-        print(select_stock_trade_by_date(fromdate=args.query_trade))
+        trade_df = select_stock_trade_by_date(fromdate=args.query_trade)
+        print(trade_df)
+        if args.adjust_weight:
+            user = xueqiu.load_user()
+            xueqiu.adjust_weight(trade_df, user)
         return
 
     cer_kwargs_str = args.cerebro
@@ -506,6 +511,9 @@ def parse_args(pargs=''):
         '--query-trade', '-qt',
         required=False, default=None,              
         help='Query stock trade from sep date')
+    
+    parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
+                        help='Adjust stock weight on xueqiu')
 
     group = parser.add_argument_group(title='Cerebro options')
     group.add_argument(

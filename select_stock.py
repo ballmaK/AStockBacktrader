@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import argparse
 import datetime
+import traceback
 import pandas as pd
 import backtrader as bt
 from pandas import DataFrame as DF
@@ -13,23 +14,27 @@ from bt.strategies.lightvolume import LightVolume
 from bt.strategies.bamboovolume import BambooVolume
 from utils.datautils import df_convert
 from utils.timeutils import *
+from utils.log import logger
+from functools import cache
 from message.bot import *
 from run import getobjects
 
 def run(code, args, fromdate, todate):
     try:
         # filter bj market
-        exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        # exe_date = datetime.datetime.now().strftime(timeutils.DATE_FORMAT_TO_DAY)
+        exe_date = todate.strftime(DATE_FORMAT_TO_DAY)
         if 'bj' in code or 'sh688' in code:
             return
         # Create a cerebro
         cerebro = bt.Cerebro()
 
         # Get the dates from the args
-        
-        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        # logger.info(f'{code} Start get data')
+        data = common.select_stock_daily(stock=code, fromdate=fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate=todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), prepared=True)
+        # logger.info(f'{code} Success get data')
         cerebro.adddata(data=bt.feeds.PandasData(dataname=df_convert(data), fromdate=fromdate, todate=todate))
-        
+        # logger.info(f'{code} Loading data')
         # Add the strategy
         # cerebro.addstrategy(LightVolume)
         strategies = getobjects(args.strategies, bt.Strategy, bt.strategies)
@@ -53,7 +58,9 @@ def run(code, args, fromdate, todate):
         # ret = cerebro.run(runonce=not args.runnext,
         #             preload=not args.nopreload,
         #             oldsync=args.oldsync)
+        # logger.info(f'{code} Run start')
         ret = cerebro.run()
+        # logger.info(f'{code} Run end')
         if ret:
             strats = [ strat for i, strat in enumerate(ret)]
             # print('Sharpe Ratio:', strats[0].analyzers.sharperatio.get_analysis())
@@ -67,21 +74,21 @@ def run(code, args, fromdate, todate):
                 last_order_type = strats[0].orders[-1]['side']
                 last_order_price = strats[0].orders[-1]['price']
                 last_order_price_now = strats[0].orders[-1]['price_now']
-                print(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
+                logger.info(f"{exe_date},{code},{sharpe},{rnorm100},{last_order_date},{last_order_type},{last_order_price},{last_order_price_now}")
                 # if last_order_date == today and last_order_type == 'BUY':
                 return ((exe_date),(code),(sharpe),(rnorm100),(last_order_date),(last_order_type),(last_order_price),(last_order_price_now))
             # trade_df = DF.from_records(strats[0].orders)
             # print(trade_df)
     except Exception as e:
-        print(f'{code} select error')
+        traceback.print_exc(e)
+        logger.error(f'{code} select error')
         
 def handle_results(request, result):
     if result:
         return result
 
 def runstrategy():
-    args = parse_args()
-    
+    args = parse_args()    
     fromdate = datetime.datetime.strptime(args.fromdate, '%Y%m%d')
     if not args.todate:
         todate  = common.get_lastest_trade_date().replace('-', '')
@@ -89,12 +96,17 @@ def runstrategy():
     else:
         todate = datetime.datetime.strptime(args.todate, '%Y%m%d')
     if args.stock_num == 'all':
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_all_stocks()
+    elif args.stock_num == '1':
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
+        codes = [args.stock]
     else:
+        common.prepare_stock_data(fromdate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH), todate.strftime(DATE_FORMAT_TO_DAY_WITHOUT_DASH))
         codes = common.select_random_stock(int(args.stock_num))
 
     results = []
-    pool = threadpool.ThreadPool(20, q_size=len(codes), resq_size=len(codes))
+    pool = threadpool.ThreadPool(10, q_size=len(codes), resq_size=len(codes))
     req_args = [([stock, args, fromdate, todate], {}) for stock in codes]
     requests = threadpool.makeRequests(run, req_args, callback=lambda x,y: results.append(y))
     [pool.putRequest(req) for req in requests]
@@ -109,32 +121,40 @@ def runstrategy():
     df['last_order_date'] = df['last_order_date'].map(timeutils.reformat_date)
     df.set_index(['exe_date'], inplace=True)
     # df.to_csv(f"select_results/{datetime.datetime.today().strftime(DATE_FORMAT_TO_DAY)}-{datetime.datetime.now().microsecond}.csv", header=True)
+    
+    exe_date = todate.strftime(DATE_FORMAT_TO_DAY)
+    logger.info(f'RUN STRATEGY {exe_date}')
     bot = QYWXMessageBot(WEB_HOOK)
     if not df.empty:
         send_message(bot, df, args)
-        base.insert_db(df.loc[df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`")   
+        if args.persistence:
+            base.insert_db(df.loc[df['last_order_date'] == exe_date], constants.STOCK_DAILY_RESULT_TABLE_NAME, True, "`exe_date`,`code`,`last_order_date`,`last_order_type`") 
+        else:
+            print(df.loc[df['last_order_date'] == exe_date])  
     else:
-        message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】今日无交易</font>')
+        message_str = str.format(f'<font color="warning">【{exe_date}】今日无交易</font>')
         message = QYWXMessageMD(message_str)
         bot.send_message(message, df, args)     
     
 def send_message(bot, df, args):
+    exe_date = common.get_lastest_trade_date()
     if not args.notify:
         return
-    buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
-    sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)), ['code', 'rnorm100','last_order_date','last_order_type']]
+    buy_df = df.loc[(df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20) & (df['last_order_date'] == exe_date), ['code', 'rnorm100','last_order_date','last_order_type']]
+    sell_df = df.loc[(df['last_order_type'] == 'SELL') & (df['last_order_date'] == exe_date), ['code', 'rnorm100','last_order_date','last_order_type']]
     # filtered_df = df.loc[(df['age'] > 25) & (df['gender'] == 'M'), ['code', 'rnorm100','last_order_date','last_order_type']]
     buy_message = str.format(
-        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐买入</font>\n')
+        f'<font color="warning">【{exe_date}】推荐买入</font>\n')
     
     sell_message = str.format(
-        f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】推荐卖出</font>\n')
+        f'<font color="warning">【{exe_date}】推荐卖出</font>\n')
     for row in buy_df.itertuples(index=False):
         msg_row = str.format(f'#### {row.code}, 模拟年化：{row.rnorm100:.2f}\n')
         buy_message = buy_message + msg_row
+        
     else:
         if buy_df.empty:
-            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】买入无推荐</font>')
+            message_str = str.format(f'<font color="warning">【{exe_date}】买入无推荐</font>')
             message = QYWXMessageMD(message_str)
             bot.send_message(message)
         else:
@@ -146,15 +166,12 @@ def send_message(bot, df, args):
         sell_message = sell_message + msg_row
     else:
         if sell_df.empty:
-            message_str = str.format(f'<font color="warning">【{datetime.datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)}】卖出无推荐</font>')
+            message_str = str.format(f'<font color="warning">【{exe_date}】卖出无推荐</font>')
             message = QYWXMessageMD(message_str)
             bot.send_message(message)
         else:
             message = QYWXMessageMD(sell_message)
             bot.send_message(message)
-    
-    
-    
 
 
 def parse_args():
@@ -175,6 +192,8 @@ def parse_args():
     
     parser.add_argument('--stock-num', default='10',
                         help='Stock pool number')
+    
+    parser.add_argument('--stock', help='Stock code')
 
     parser.add_argument('--runnext', action='store_true',
                         help='Use next by next instead of runonce')
@@ -193,6 +212,11 @@ def parse_args():
     
     parser.add_argument('--notify', '-nt', action='store_true', default=False,
                         help='Whether to send notify message')
+    
+    parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
+                        help='Adjust stock weight on xueqiu')
+    
+    parser.add_argument('--persistence', action='store_true', default=False)
     
     parser.add_argument(
         '--strategy', '-st', dest='strategies',

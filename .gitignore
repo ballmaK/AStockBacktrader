@@ -71,3 +71,6 @@ datas/*.py
 .idea/
 
 select_results/
+
+*config.json
+logs/*.log

@@ -6,5 +6,6 @@ def df_convert(df):
     df['high'] = pd.to_numeric(df['high'])
     df['low'] = pd.to_numeric(df['low'])
     df['volume'] = pd.to_numeric(df['volume'])
+    df = df.sort_values(by=['date'], ascending=True)
     df.index = pd.to_datetime(df['date'])
     return df

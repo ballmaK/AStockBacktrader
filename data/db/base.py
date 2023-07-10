@@ -12,6 +12,7 @@ import MySQLdb
 from sqlalchemy import create_engine
 from sqlalchemy.types import NVARCHAR
 from sqlalchemy import inspect
+from utils.log import logger
 import pandas as pd
 import traceback
 import akshare as ak
@@ -48,7 +49,7 @@ def conn():
         db = MySQLdb.connect(MYSQL_HOST, MYSQL_USER, MYSQL_PWD, MYSQL_DB, charset="utf8")
         # db.autocommit = True
     except Exception as e:
-        print("conn error :", e)
+        logger.error("conn error :", e)
     db.autocommit(on=True)
     return db.cursor()
 
@@ -86,7 +87,7 @@ def insert_other_db(to_db, data, table_name, write_index, primary_keys):
             try:
                 con.execute('ALTER TABLE `%s` ADD PRIMARY KEY (%s);' % (table_name, primary_keys))
             except  Exception as e:
-                print("################## ADD PRIMARY KEY ERROR :", e)
+                logger.error("################## ADD PRIMARY KEY ERROR :", e)
 
 
 

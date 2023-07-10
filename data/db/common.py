@@ -4,8 +4,11 @@
 import random
 import akshare as ak
 import traceback
+import pandas as pd
+# import ttl_cache
 
 # sys.path.append("../..")
+from functools import cache
 import utils.timeutils as timeutils
 import utils.threadpool as threadpool
 
@@ -13,6 +16,9 @@ from datetime import datetime
 from . import base
 from . import mapper
 from . import constants
+from utils.log import logger
+
+data_cache = None
 
 def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
     if stock == 'all':
@@ -35,18 +41,22 @@ def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
         
     q_size = len(stocks)
     if datetime.today() <= end_date:
-        print("** 更新时间 [%s] **" % end_date.strftime(timeutils.DATE_FORMAT_TO_DAY))
+        # print("** 更新时间 [%s] **" % end_date.strftime(timeutils.DATE_FORMAT_TO_DAY))
+        msg = "** 更新时间 [%s] **" % end_date.strftime(timeutils.DATE_FORMAT_TO_DAY)
+        logger.info(msg)
         if datetime.now().hour > constants.UPDATE_TIME_DAILY_LIMIT:
-            print(f'** 开始更新日线数据 [{start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)} - {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)}][{adjust}] **')
+            # print()
+            msg = f'** 开始更新日线数据 [{start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)} - {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)}][{adjust}] **'
+            logger.info(msg)
             pool = threadpool.ThreadPool(10, q_size=q_size, resq_size=q_size)
             args = [([stock, start_date, end_date, adjust], {}) for stock in stocks]
             requests = threadpool.makeRequests(__init_stock_daily, args)
             [pool.putRequest(req) for req in requests]
             pool.wait()
         else:
-            print(f'** 更新时间不能早于 {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY)} {constants.UPDATE_TIME_DAILY_LIMIT} 点')
+            logger.error(f'** 更新时间不能早于 {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY)} {constants.UPDATE_TIME_DAILY_LIMIT} 点')
     else:
-        print(f'** 开始更新日线数据 [{start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)} - {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)}][{adjust}] **')
+        logger.info(f'** 开始更新日线数据 [{start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)} - {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)}][{adjust}] **')
         pool = threadpool.ThreadPool(10, q_size=q_size, resq_size=q_size)
         args = [([stock, start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH), end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH), adjust], {}) for stock in stocks]
         requests = threadpool.makeRequests(__init_stock_daily, args)
@@ -68,13 +78,66 @@ def update_stock_industry(stock=None):
 def select_all_stocks():
     return mapper.select_all_code()
 
-def select_stock_daily(stock, fromdate, todate):
+# @ttl_cache
+def select_stock_daily(stock, fromdate, todate, prepared=False):
     code = stock
     fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
     start_date = fromdatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
     end_date = todatetime.strftime(timeutils.DATE_FORMAT_TO_DAY)
-    return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+    if prepared:
+        prepared_data = data_cache.get_group(stock)
+        # logger.info(f'DATA PREPARED {prepared_data.shape}' )
+        return prepared_data
+        # return prepared_data.groupby('code').filter(lambda x: (x['code'] == stock).any())
+    else:
+        return mapper.select_data_between_date(code=code, start_date=start_date, end_date=end_date)
+
+# @ttl_cache(60 * 60 * 2)
+def prepare_stock_data(fromdate, todate):
+    global data_cache
+    if data_cache:
+        logger.info(f'FETCHING DATA BY CACHE {data_cache.shape}')
+        return data_cache
+    logger.info(f"PREPARE DATA {fromdate}-{todate}")
+    fromdatetime = datetime.strptime(fromdate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    todatetime = datetime.strptime(todate, timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)
+    # return
+    fd = fromdatetime
+    day_step = 30
+    td = timeutils.get_nextN_day(fromdatetime, day_step)
+    data_df = pd.DataFrame()
+    data = []
+    ft_date_list = [(fd.strftime(timeutils.DATE_FORMAT_TO_DAY), td.strftime(timeutils.DATE_FORMAT_TO_DAY))]
+    if timeutils.get_nextN_day(fromdatetime, day_step) > todatetime:
+        td = todatetime
+        ft_date_list = [(fd.strftime(timeutils.DATE_FORMAT_TO_DAY), td.strftime(timeutils.DATE_FORMAT_TO_DAY))]
+    else:
+        while td < todatetime:
+            fd = timeutils.get_next_day(td)
+            td = timeutils.get_nextN_day(fd, day_step)
+            if td > todatetime:
+                td = todatetime
+            start_date = fd.strftime(timeutils.DATE_FORMAT_TO_DAY)
+            end_date = td.strftime(timeutils.DATE_FORMAT_TO_DAY)
+            ft_date_list.append((start_date, end_date))
+    # return mapper.prepare_stock_data(start_date=start_date, end_date=end_date)
+    # print(ft_date_list)
+    results = []
+    pool = threadpool.ThreadPool(20, q_size=len(ft_date_list), resq_size=len(ft_date_list))
+    req_args = [([fromdate, todate], {}) for (fromdate, todate) in ft_date_list]
+    requests = threadpool.makeRequests(mapper.prepare_stock_data, req_args, callback=lambda x,y: results.append(y))
+    [pool.putRequest(req) for req in requests]
+    pool.wait()
+    for result in results:
+        data_df = pd.concat([data_df, result])
+    logger.info(f"PREPARE DATA {fromdate}-{todate} Done {data_df.shape}")
+    data_cache = data_df.groupby('code')
+    return data_df
+
+def concat_df(target_df, source_df):
+    print(source_df, target_df)
+    source_df = pd.concat([source_df, target_df])
 
 def select_stock_trade_by_date(fromdate=None):
     return mapper.select_stock_trade_by_date(fromdate)
@@ -92,14 +155,14 @@ def get_lastest_trade_date():
     return mapper.get_lastest_trade_date()
 
 def init_stock_info():
-    print('** 更新股票基础数据 **')
+    logger.info('** 更新股票基础数据 **')
     df = ak.stock_zh_a_spot()
     df['code'] = df['代码']
     df['symbol'] = df['代码'].map(lambda x: x[2:])
     df['name'] = df['名称']
     stock_df = df[['code', 'symbol', 'name']]
     stock_df.set_index('code', inplace=True)
-    print(stock_df)
+    # print(stock_df)
     if not stock_df.empty:
         base.insert_db(stock_df, constants.STOCK_BASE_TABLE_NAME, True, "`code`")
         
@@ -124,22 +187,22 @@ def __init_stock_daily(stock, start_date, end_date, adjust):
         # df.drop('index', axis=1, inplace=True)
         # print(df)
         # 删除index，然后和原始数据合并。
-        print('[UPDATING][%s][%s - %s][%s][%s rows]' % (stock, start_date, end_date, adjust, df['code'].count()))
+        logger.info('[UPDATING][%s][%s - %s][%s][%s rows]' % (stock, start_date, end_date, adjust, df['code'].count()))
         base.insert_db(df, constants.STOCK_DAILY_TABLE_NAME, True, "`date`,`code`")
         # else:
             # print('[%s] already exist, pass' % stock)
     except Exception as e:
         traceback.print_exc(e)
-        print('error', stock, e)
+        logger.error('error', stock, e)
         
 def __update_stock_industry():
     try:
         today = datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)
         industry_df = mapper.select_industry_data_by_date(today)
         if not industry_df.empty:
-            print(f'** 股票行业数据 {today} 已更新**')
+            logger.warning(f'** 股票行业数据 {today} 已更新**')
             return industry_df
-        print(f'** 更新股票行业数据 {today} **')
+        logger.info(f'** 更新股票行业数据 {today} **')
         stock_board_industry_name_em_df = ak.stock_board_industry_name_em()
         stock_board_industry_name_em_df['date'] = today
         stock_board_industry_name_em_df.rename(columns={'排名': 'range'}, inplace=True)
@@ -159,16 +222,16 @@ def __update_stock_industry():
         return stock_board_industry_name_em_df
     except Exception as e:
         traceback.print_exc(e)
-        print('update industry error', e)
+        logger.error('update industry error', e)
         
 def __update_stock_industry_detail(industry_name, indusctry_code):
     try:
         today = datetime.today().strftime(timeutils.DATE_FORMAT_TO_DAY)
         industry_df = mapper.select_industry_data_detail(indusctry_code, today)
         if not industry_df.empty:
-            print(f'** 股票行业明细数据 {today} 已更新**')
+            logger.warning(f'** 股票行业明细数据 {today} 已更新**')
             return
-        print(f'** 更新股票行业明细数据 {today} **')
+        logger.info(f'** 更新股票行业明细数据 {today} **')
         stock_board_industry_cons_em_df = ak.stock_board_industry_cons_em(symbol=industry_name)
         stock_board_industry_cons_em_df['ind_name'] = industry_name
         stock_board_industry_cons_em_df['ind_code'] = indusctry_code
@@ -193,7 +256,7 @@ def __update_stock_industry_detail(industry_name, indusctry_code):
         base.insert_db(stock_board_industry_cons_em_df, constants.STOCK_INDUSTRY_DETAIL_TABLE_NAME, True, "`date`,`symbol`,`ind_code`")
     except Exception as e:
         traceback.print_exc(e)
-        print('update stock industry detail error', e)
+        logger.error('update stock industry detail error', e)
         
 if __name__ == '__main__':
     # update_stock_daily()

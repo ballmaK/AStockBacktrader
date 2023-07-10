@@ -17,6 +17,12 @@ def get_next_day(date):
     next_day = date + datetime.timedelta(days=1)
     return next_day
 
+def get_nextN_day(date, n):
+    if not date:
+        date = datetime.datetime.now()
+    next_day = date + datetime.timedelta(days=n)
+    return next_day
+
 def get_today_timestamp():
     return time.mktime(time.strptime(time.strftime(DATE_FORMAT_TO_DAY, time.localtime(time.time())), DATE_FORMAT_TO_DAY))
 
