@@ -44,7 +44,7 @@ def update_stock_daily(stock=None, fromdate=None, todate=None, adjust='hfq'):
         # print("** 更新时间 [%s] **" % end_date.strftime(timeutils.DATE_FORMAT_TO_DAY))
         msg = "** 更新时间 [%s] **" % end_date.strftime(timeutils.DATE_FORMAT_TO_DAY)
         logger.info(msg)
-        if datetime.now().hour > constants.UPDATE_TIME_DAILY_LIMIT:
+        if datetime.now().hour >= constants.UPDATE_TIME_DAILY_LIMIT:
             # print()
             msg = f'** 开始更新日线数据 [{start_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)} - {end_date.strftime(timeutils.DATE_FORMAT_TO_DAY_WITHOUT_DASH)}][{adjust}] **'
             logger.info(msg)

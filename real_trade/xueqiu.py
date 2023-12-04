@@ -31,14 +31,14 @@ def adjust_weight(trade_df=None, user=None):
             print(f'[持仓] {stock.name}({stock.code})')
         else:
             # 买 or 卖
-            if stock.sell_date == '--':
+            if stock.sell_date != '--':
                 # 买
                 # print(f'[开仓] {stock.name} {stock.code}, {2}')
-                user.adjust_weight(stock.code[2:], 2)
+                user.adjust_weight(stock.code[2:], -2)
             else:
                 # 卖
                 # print(f'[平仓] {stock.name} {stock.code}')
-                user.adjust_weight(stock.code[2:], 0)
+                user.adjust_weight(stock.code[2:], 2)
     # if not len(result) and weight > 0:
     #     print(f'[ADJUST_WEIGHT] BUY {symbol}, {weight}')
     #     user.adjust_weight(symbol[2:], weight)
