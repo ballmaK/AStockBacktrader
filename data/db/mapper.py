@@ -100,7 +100,7 @@ def prepare_stock_data(start_date, end_date):
     return df
 
 def select_stock_daily_reuslt(start_date, end_date):
-    sql = "select * from %s where date >= '%s' and date <= '%s'" % (constants.STOCK_DAILY_RESULT_TABLE_NAME, start_date, end_date)
+    sql = "select * from %s where exe_date >= '%s' and exe_date <= '%s'" % (constants.STOCK_DAILY_RESULT_TABLE_NAME, start_date, end_date)
     # print(sql+'\n')
     try:
         df = pd.read_sql(sql=sql, con=base.engine())
