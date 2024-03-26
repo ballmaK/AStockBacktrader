@@ -113,7 +113,7 @@ def run(pargs=''):
         if not args.fromdate or not args.todate:
             print(f'** 开始/结束日期未给定')
             return
-        records = common.select_stock_daily_result_opt(stock=args.data[0], fromdate=args.fromdate, todate=args.todate)
+        records = common.select_stock_daily_result_opt(fromdate=args.fromdate, todate=args.todate)
         print(records)
         return
     

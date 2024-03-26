@@ -20,8 +20,8 @@ from utils.log import logger
 
 data_cache = None
 
-def select_stock_daily_result_opt(stock=None, fromdate=None, todate=None):
-    df = mapper.select_stock_daily_reuslt(stock, fromdate, todate)
+def select_stock_daily_result_opt(fromdate=None, todate=None):
+    df = mapper.select_stock_daily_reuslt(fromdate, todate)
     filter_df = df.loc[(df['last_order_type'] == 'SELL') or (df['last_order_type'] == 'BUY') & (df['rnorm100'] > 20), ['exe_date', 'code', 'rnorm100','last_order_date','last_order_type']]
     return filter_df
 
