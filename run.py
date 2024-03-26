@@ -521,8 +521,8 @@ def parse_args(pargs=''):
         help='Query stock trade from sep date')
     
     group.add_argument(
-        '--record-deal', '-rd',
-        required=False, default=None,              
+        '--record-deal', '-rd', action="store_true",
+        required=False, default=False,              
         help='Record stock deal')
     
     parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
