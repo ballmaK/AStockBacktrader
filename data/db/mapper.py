@@ -99,6 +99,17 @@ def prepare_stock_data(start_date, end_date):
     # print(df)
     return df
 
+def select_stock_daily_reuslt(code, start_date, end_date):
+    sql = "select * from %s where date >= '%s' and date <= '%s' and code='%s'" % (constants.STOCK_DAILY_RESULT_TABLE_NAME, start_date, end_date, code)
+    # print(sql+'\n')
+    try:
+        df = pd.read_sql(sql=sql, con=base.engine())
+    except Exception as e:
+        logger.error(e)
+        return ''
+    # print(df)
+    return df
+
 def select_stock_trade_by_date(fromdate):
     sql = "SELECT \
             buy.exe_date AS buy_date, \

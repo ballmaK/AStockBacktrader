@@ -109,6 +109,14 @@ def run(pargs=''):
         print(select_stock_daily(stock=args.data[0], fromdate=args.fromdate, todate=args.todate, prepared=True))
         return
     
+    if args.record_deal:
+        if not args.fromdate or not args.todate:
+            print(f'** 开始/结束日期未给定')
+            return
+        records = common.select_stock_daily_result_opt(stock=args.data[0], fromdate=args.fromdate, todate=args.todate)
+        print(records)
+        return
+    
     if args.query_trade:
         pd.set_option('display.unicode.ambiguous_as_wide', True)
         pd.set_option('display.unicode.east_asian_width', True)
@@ -511,6 +519,11 @@ def parse_args(pargs=''):
         '--query-trade', '-qt',
         required=False, default=None,              
         help='Query stock trade from sep date')
+    
+    group.add_argument(
+        '--record-deal', '-rd',
+        required=False, default=None,              
+        help='Record stock deal')
     
     parser.add_argument('--adjust-weight', '-aw', action='store_true', default=False,
                         help='Adjust stock weight on xueqiu')
